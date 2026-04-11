@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exposure Management</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0f1117;
+  --surface: #181a22;
+  --surface2: #1e2030;
+  --surface3: #252838;
+  --border: #2a2d3e;
+  --text: #e2e4f0;
+  --text-dim: #8b8fa8;
+  --text-muted: #5c6078;
+  --accent1: #6c9eff;
+  --accent1-dim: rgba(108,158,255,0.12);
+  --accent2: #ff7eb3;
+  --accent2-dim: rgba(255,126,179,0.12);
+  --accent3: #7cefb3;
+  --accent3-dim: rgba(124,239,179,0.12);
+  --accent4: #f5c85a;
+  --accent4-dim: rgba(245,200,90,0.12);
+  --cap1: #6c9eff;
+  --cap1-bg: rgba(108,158,255,0.10);
+  --cap2: #ff7eb3;
+  --cap2-bg: rgba(255,126,179,0.10);
+  --cap3: #7cefb3;
+  --cap3-bg: rgba(124,239,179,0.10);
+  --cap4: #f5c85a;
+  --cap4-bg: rgba(245,200,90,0.10);
+  --lens-reach: #ff6b6b;
+  --lens-priv: #ffa94d;
+  --lens-data: #da77f2;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.app { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 40px 20px 30px;
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  border-radius: 1px;
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+}
+.header p {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 30px 0 24px;
+  flex-wrap: wrap;
+}
+.nav-btn {
+  padding: 10px 22px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.nav-btn:hover { border-color: var(--accent1); color: var(--text); }
+.nav-btn.active {
+  background: var(--accent1-dim);
+  border-color: var(--accent1);
+  color: var(--accent1);
+}
+
+/* Search */
+.search-bar {
+  max-width: 500px;
+  margin: 0 auto 28px;
+  position: relative;
+}
+.search-bar input {
+  width: 100%;
+  padding: 12px 18px 12px 42px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-bar input:focus { border-color: var(--accent1); }
+.search-bar input::placeholder { color: var(--text-muted); }
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.stat {
+  text-align: center;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  min-width: 100px;
+}
+.stat-num { font-size: 22px; font-weight: 700; }
+.stat-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Sections */
+.section { display: none; }
+.section.active { display: block; }
+
+/* ===== GLOSSARY VIEW ===== */
+.glossary-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.filter-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.filter-chip:hover { border-color: var(--text-dim); color: var(--text); }
+.filter-chip.active { color: #fff; }
+.filter-chip[data-cap="all"].active { background: var(--surface2); border-color: var(--text-dim); }
+.filter-chip[data-cap="1"].active { background: var(--cap1); border-color: var(--cap1); }
+.filter-chip[data-cap="2"].active { background: var(--cap2); border-color: var(--cap2); }
+.filter-chip[data-cap="3"].active { background: var(--cap3); border-color: var(--cap3); }
+.filter-chip[data-cap="4"].active { background: var(--cap4); border-color: var(--cap4); }
+.filter-chip[data-cap="core"].active { background: #888; border-color: #888; }
+.filter-chip[data-cap="lens"].active { background: var(--lens-reach); border-color: var(--lens-reach); }
+
+.glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+}
+
+.term-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.term-card:hover {
+  border-color: var(--accent1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.term-card.expanded { grid-column: 1 / -1; }
+.term-card .term-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.term-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+}
+.term-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.term-badge.cap1 { background: var(--cap1-bg); color: var(--cap1); }
+.term-badge.cap2 { background: var(--cap2-bg); color: var(--cap2); }
+.term-badge.cap3 { background: var(--cap3-bg); color: var(--cap3); }
+.term-badge.cap4 { background: var(--cap4-bg); color: var(--cap4); }
+.term-badge.core { background: rgba(136,136,136,0.15); color: #aaa; }
+.term-badge.lens { background: rgba(255,107,107,0.12); color: var(--lens-reach); }
+
+.term-short {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.term-detail {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.term-card.expanded .term-detail { display: block; }
+
+.detail-section {
+  margin-bottom: 12px;
+}
+.detail-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.detail-text {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.related-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+.related-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: var(--surface3);
+  border-radius: 4px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.related-tag:hover { background: var(--accent1-dim); color: var(--accent1); }
+
+.lens-indicators {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.lens-ind {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.lens-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ===== MIND MAP VIEW ===== */
+.mindmap-container {
+  position: relative;
+  min-height: 600px;
+}
+.mindmap-wrapper {
+  overflow-x: auto;
+  padding: 20px 0;
+}
+.capability-section {
+  margin-bottom: 30px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 24px;
+}
+.cap-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cap-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.domains-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.domain-node {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 260px;
+  max-width: 340px;
+  flex: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.domain-node:hover {
+  border-color: var(--accent1);
+  transform: translateY(-2px);
+}
+.domain-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.domain-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.domain-term-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: var(--surface3);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.domain-term-chip:hover {
+  background: var(--accent1-dim);
+  color: var(--accent1);
+}
+.domain-modes {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+.mode-pill {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* Risk Lenses strip */
+.lenses-strip {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.lens-card {
+  flex: 1;
+  min-width: 200px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.lens-card h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lens-card p {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ===== DEEP DIVE VIEW ===== */
+.deep-dive-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  min-height: 500px;
+}
+@media (max-width: 768px) {
+  .deep-dive-layout { grid-template-columns: 1fr; }
+  .glossary-grid { grid-template-columns: 1fr; }
+}
+
+.dd-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+.dd-sidebar-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.dd-nav-item {
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  border-left: 3px solid transparent;
+}
+.dd-nav-item:hover { background: var(--surface2); color: var(--text); }
+.dd-nav-item.active {
+  background: var(--accent1-dim);
+  color: var(--accent1);
+  border-left-color: var(--accent1);
+}
+.dd-nav-group {
+  margin-bottom: 16px;
+}
+.dd-nav-group-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding: 4px 12px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.dd-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 30px;
+}
+.dd-content h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.dd-content .dd-subtitle {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+.dd-block {
+  margin-bottom: 24px;
+}
+.dd-block h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--accent1);
+}
+.dd-block p, .dd-block li {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+.dd-block ul {
+  padding-left: 18px;
+}
+.dd-block li { margin-bottom: 4px; }
+
+.dd-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+.dd-comp-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.dd-comp-box h4 {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.dd-comp-box p {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.dd-terms-in-domain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.dd-term-pill {
+  padding: 6px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dd-term-pill:hover {
+  background: var(--accent1-dim);
+  color: var(--accent1);
+  border-color: var(--accent1);
+}
+
+.dd-key-stat {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--accent4-dim);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent4);
+  margin: 2px 4px 2px 0;
+}
+
+/* Top Bar */
+.top-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 4px 0;
+}
+.top-bar a.about-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+  letter-spacing: 0.3px;
+}
+.top-bar a.about-link:hover { color: var(--accent1); }
+
+/* Language Toggle */
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 2px;
+}
+.lang-toggle button {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 16px;
+  transition: all 0.25s;
+  letter-spacing: 0.5px;
+}
+.lang-toggle button.active {
+  background: var(--accent1);
+  color: #fff;
+}
+.lang-toggle button:hover:not(.active) { color: var(--text); }
+
+/* Scroll */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top-bar">
+    <a href="about.html" class="about-link">About</a>
+    <div class="lang-toggle">
+      <button class="active" onclick="setLang('es')">ES</button>
+      <button onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+
+  <div class="header">
+    <h1>Exposure Management</h1>
+    <p>A practical, nested quick reference for modern security domains.</p>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('glossary')">Glosario</button>
+    <button class="nav-btn" onclick="showSection('mindmap')">Mind Map</button>
+    <button class="nav-btn" onclick="showSection('deepdive')">Deep Dive</button>
+  </div>
+
+  <div class="search-bar">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="searchInput" placeholder="Buscar término, acrónimo o concepto..." oninput="handleSearch(this.value)">
+  </div>
+
+  <!-- ===== GLOSSARY ===== -->
+  <div class="section active" id="sec-glossary">
+    <div class="glossary-filters">
+      <button class="filter-chip active" data-cap="all" onclick="filterGlossary('all',this)">Todos</button>
+      <button class="filter-chip" data-cap="1" onclick="filterGlossary('1',this)">Cap 1: Secure Eng</button>
+      <button class="filter-chip" data-cap="2" onclick="filterGlossary('2',this)">Cap 2: Runtime</button>
+      <button class="filter-chip" data-cap="3" onclick="filterGlossary('3',this)">Cap 3: Cloud</button>
+      <button class="filter-chip" data-cap="4" onclick="filterGlossary('4',this)">Cap 4: Business</button>
+      <button class="filter-chip" data-cap="core" onclick="filterGlossary('core',this)">Frameworks</button>
+      <button class="filter-chip" data-cap="lens" onclick="filterGlossary('lens',this)">Risk Lenses</button>
+    </div>
+    <div class="glossary-grid" id="glossaryGrid"></div>
+  </div>
+
+  <!-- ===== MIND MAP ===== -->
+  <div class="section" id="sec-mindmap">
+    <div class="lenses-strip">
+      <div class="lens-card">
+        <h4><span class="lens-dot" style="background:var(--lens-reach)"></span> Reachability</h4>
+        <p>¿El activo o vulnerabilidad está expuesto a atacantes externos o es alcanzable por movimiento lateral?</p>
+      </div>
+      <div class="lens-card">
+        <h4><span class="lens-dot" style="background:var(--lens-priv)"></span> Privilege</h4>
+        <p>¿La explotación lleva a acceso elevado, identidades privilegiadas o paths de escalamiento?</p>
+      </div>
+      <div class="lens-card">
+        <h4><span class="lens-dot" style="background:var(--lens-data)"></span> Data Sensitivity</h4>
+        <p>¿La explotación expone PII/PHI/PCI, secretos o datos regulados?</p>
+      </div>
+    </div>
+    <div id="mindmapContent"></div>
+  </div>
+
+  <!-- ===== DEEP DIVE ===== -->
+  <div class="section" id="sec-deepdive">
+    <div class="deep-dive-layout">
+      <div class="dd-sidebar" id="ddSidebar"></div>
+      <div class="dd-content" id="ddContent">
+        <p style="color:var(--text-dim);font-size:14px;">← Selecciona un tema para explorar</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== i18n SYSTEM =====
+let currentLang = 'es';
+
+const i18n = {
+  es: {
+    title: 'Exposure Management',
+    subtitle: 'A practical, nested quick reference for modern security domains.',
+    navGlossary: 'Glosario',
+    navMindmap: 'Mind Map',
+    navDeepDive: 'Deep Dive',
+    searchPlaceholder: 'Buscar término, acrónimo o concepto...',
+    filterAll: 'Todos',
+    filterCap1: 'Cap 1: Secure Eng',
+    filterCap2: 'Cap 2: Runtime',
+    filterCap3: 'Cap 3: Cloud',
+    filterCap4: 'Cap 4: Business',
+    filterFrameworks: 'Frameworks',
+    filterLenses: 'Risk Lenses',
+    deepDiveLabel: 'Deep Dive',
+    riskLensesApplied: 'Risk Lenses Aplicadas',
+    related: 'Relacionados',
+    selectTopic: '← Selecciona un tema para explorar',
+    strategicTopics: 'Temas Estratégicos',
+    byDomain: 'Por Dominio',
+    termsInDomain: 'Términos en este Dominio',
+    lensReachTitle: 'Reachability',
+    lensReachDesc: '¿El activo o vulnerabilidad está expuesto a atacantes externos o es alcanzable por movimiento lateral?',
+    lensPrivTitle: 'Privilege',
+    lensPrivDesc: '¿La explotación lleva a acceso elevado, identidades privilegiadas o paths de escalamiento?',
+    lensDataTitle: 'Data Sensitivity',
+    lensDataDesc: '¿La explotación expone PII/PHI/PCI, secretos o datos regulados?',
+    crossCutting: 'Cross-Cutting Frameworks & Tools',
+  },
+  en: {
+    title: 'Exposure Management',
+    subtitle: 'A practical, nested quick reference for modern security domains.',
+    navGlossary: 'Glossary',
+    navMindmap: 'Mind Map',
+    navDeepDive: 'Deep Dive',
+    searchPlaceholder: 'Search term, acronym or concept...',
+    filterAll: 'All',
+    filterCap1: 'Cap 1: Secure Eng',
+    filterCap2: 'Cap 2: Runtime',
+    filterCap3: 'Cap 3: Cloud',
+    filterCap4: 'Cap 4: Business',
+    filterFrameworks: 'Frameworks',
+    filterLenses: 'Risk Lenses',
+    deepDiveLabel: 'Deep Dive',
+    riskLensesApplied: 'Applied Risk Lenses',
+    related: 'Related',
+    selectTopic: '← Select a topic to explore',
+    strategicTopics: 'Strategic Topics',
+    byDomain: 'By Domain',
+    termsInDomain: 'Terms in this Domain',
+    lensReachTitle: 'Reachability',
+    lensReachDesc: 'Is the asset or vulnerability exposed to external attackers or reachable via lateral movement?',
+    lensPrivTitle: 'Privilege',
+    lensPrivDesc: 'Does exploitation lead to elevated access, privileged identities, or escalation paths?',
+    lensDataTitle: 'Data Sensitivity',
+    lensDataDesc: 'Does exploitation expose PII/PHI/PCI, secrets, or regulated data?',
+    crossCutting: 'Cross-Cutting Frameworks & Tools',
+  }
+};
+
+// English translations for TERMS
+const TERMS_EN = {
+  appsec: {short:"Discipline focused on identifying and reducing risks in application code, dependencies, IaC, and runtime behavior.",detail:"Covers the entire cycle: from static source code analysis to production monitoring. It's the umbrella containing SAST, SCA, SBOM, ASPM, and IaC scanning.",lenses:{reach:"Is the vulnerable code deployed on internet-facing endpoints?",priv:"Does the app use identities with high privileges or write access?",data:"Does the code/dependency touch PII/PHI/PCI or regulated data flows?"}},
+  aspm: {short:"Unified management of application security risk across code, pipelines, cloud, and runtime.",detail:"Consolidates findings from SAST, SCA, DAST, IaC, and runtime into a unified view with ownership. The evolution from having 5 separate dashboards to one correlated view.",lenses:{reach:"Correlates code findings with real production exposure",priv:"Identifies which services run with elevated privileges",data:"Maps sensitive data flows across the application stack"}},
+  sast: {short:"Static analysis of source code to detect insecure patterns before the application runs.",detail:"Scans code without executing it. Finds SQLi, XSS, hardcoded secrets, buffer overflows. Limitation: high false positive rate because it lacks runtime context."},
+  sca: {short:"Analysis of open-source and third-party dependencies to identify known vulnerabilities and malicious packages.",detail:"Scans libraries and dependencies (npm, PyPI, Maven, etc.) against CVE databases. Key for supply chain security — 80%+ of an app's code is open-source."},
+  sbom: {short:"Formal inventory of all software components, versions, and dependencies of an application.",detail:"It's the 'ingredient list' of software. Critical for incident response (e.g., 'Do we have Log4j?') and regulatory compliance. Formats: SPDX and CycloneDX."},
+  iac: {short:"Declarative definitions of cloud infrastructure that can be scanned to prevent insecure configurations before deployment.",detail:"Terraform, CloudFormation, Pulumi, etc. Scanned to detect public S3 buckets, open security groups, disabled encryption — before they exist in the cloud."},
+  devsecops: {short:"Integration of security controls and automation into DevOps workflows throughout the software lifecycle.",detail:"Not a product but a practice. It means security isn't a gate at the end but is embedded in every step: commit hooks, pipeline gates, container scanning, etc.",lenses:{reach:"Does CI/CD prevent shipping public exposure (open ports, public buckets)?",priv:"Are pipeline roles and service principals least-privileged?",data:"Do pipelines prevent secrets/PII in code, artifacts, and logs?"}},
+  shiftleft: {short:"Security approach that detects issues earlier in the development lifecycle to reduce cost and risk.",detail:"The principle: the earlier you find a bug, the cheaper it is to fix. Finding a SQLi in code review costs $100; in production after a breach, millions."},
+  sdlc: {short:"End-to-end process of designing, building, testing, deploying, and maintaining software.",detail:"Typical phases: Requirements → Design → Development → Testing → Deployment → Maintenance. Security must be integrated at every phase, not just testing.",lenses:{reach:"Do designs create public attack surfaces (auth flows, APIs)?",priv:"Do workflows allow privilege escalation?",data:"Do business flows expose sensitive data?"}},
+  threatmodel: {short:"Structured process to identify attack paths, misuse cases, and design weaknesses early in the SDLC.",detail:"Popular frameworks: STRIDE (Microsoft), PASTA, Attack Trees. Done during design phase. Key question: 'What can go wrong and how would an attacker exploit it?'"},
+  cwpp: {short:"Runtime security controls protecting cloud workloads: VMs, containers, and serverless functions.",detail:"Runtime protection: anti-malware, anomalous behavior detection, file integrity monitoring, workload vulnerability scanning at runtime.",lenses:{reach:"Does the workload have exposed ports or is it accessible from the internet?",priv:"Does the workload have IAM roles with excessive permissions?",data:"Does the workload process or store sensitive data?"}},
+  cdr: {short:"Detection and response to cloud-native threats using workload, identity, and control plane telemetry.",detail:"Complements CWPP with response capability. Detects lateral movement, credential theft, anomalies in cloud provider API calls."},
+  runtime: {short:"Security controls that operate while applications and workloads are running in production.",detail:"Includes RASP, WAF, CWPP, and any control that acts in real time during execution. Unlike SAST/SCA which are pre-production."},
+  tavm: {short:"Continuous process to discover, prioritize, remediate, and track vulnerabilities based on real-world risk.",detail:"The heart of this program. It's not just scanning — it's prioritizing by business impact, tracking remediation SLAs, escalating what matters, and measuring risk reduction.",lenses:{reach:"Is the vulnerability reachable by an external attacker?",priv:"Does exploitation escalate privileges?",data:"Does exploitation expose regulated data?"}},
+  threatdetect: {short:"Identification of malicious or anomalous activity using logs, signals, and behavioral analysis.",detail:"Goes beyond vulnerability scanning: looks for active indicators of compromise (IOCs), anomalous behavior, lateral movement in progress."},
+  siem: {short:"Centralized platform for collecting, correlating, and analyzing security events and logs.",detail:"Aggregates logs from firewalls, endpoints, servers, applications, cloud. Enables detection rules, event correlation, and alert generation. Tools: Splunk, Sentinel, Chronicle.",lenses:{reach:"Do logs cover all entry points and exposed surfaces?",priv:"Are privilege changes and privileged access monitored?",data:"Are anomalous accesses to sensitive data detected?"}},
+  cloudsiem: {short:"Cloud-native SIEM optimized for cloud logs, identities, workloads, and SaaS telemetry.",detail:"Evolution of traditional SIEM for the cloud world. Natively integrates with AWS CloudTrail, Azure Activity Log, GCP Audit Logs, Okta, etc."},
+  appobs: {short:"Visibility into application behavior, performance, and user experience in production.",detail:"The three pillars: Metrics, Logs, Traces. For security: correlates vulnerabilities with real app behavior — does this vulnerable endpoint actually receive traffic?",lenses:{reach:"Does observability cover exposed endpoints?",priv:"Are privileged actions in the app monitored?",data:"Is anomalous access to sensitive data detected?"}},
+  apm: {short:"Monitoring of application performance, latency, errors, and service dependencies.",detail:"Datadog APM, Dynatrace, New Relic. For TAVM: if a vulnerable service has 0ms latency, it probably doesn't receive real traffic — lower the priority."},
+  tracing: {short:"End-to-end tracking of requests across microservices to understand execution paths and dependencies.",detail:"Follows a request from ingress to the database through N microservices. For security: shows if a request touches a vulnerable service and with what data."},
+  dem: {short:"Monitoring of real user experience through RUM, synthetic tests, and session replay.",detail:"Includes RUM (real session telemetry) and synthetic tests. For security: detects anomalies in user behavior that could indicate account takeover."},
+  rum: {short:"Collection of telemetry from real user sessions interacting with applications.",detail:"Captures real user metrics: page load times, JS errors, crashes. Different from synthetic monitoring which simulates users."},
+  aiops: {short:"Use of ML and analytics to correlate events, reduce noise, and identify root causes.",detail:"In TAVM: reduces alert fatigue by grouping related vulnerabilities, auto-prioritizing by context, and correlating findings from multiple scanners. Key for scaling.",lenses:{reach:"Auto-prioritizes reachable issues over internal ones",priv:"Detects privilege escalation patterns",data:"Correlates alerts with sensitive data exposure"}},
+  soar: {short:"Automation of security workflows: alert triage, ticketing, and remediation.",detail:"Automated playbooks: 'if scanner finds Critical in production, create P1 ticket, notify team, escalate if not fixed in 48h'. Tools: Palo Alto XSOAR, Splunk SOAR."},
+  cspm: {short:"Continuous detection of cloud misconfigurations and compliance violations.",detail:"Scans your AWS/Azure/GCP account looking for: public S3 buckets, open security groups, disabled encryption, turned-off logging. It's the cloud 'hygiene check'.",lenses:{reach:"Are there cloud resources exposed to the internet unnecessarily?",priv:"Are there over-permissioned IAM roles?",data:"Are there unencrypted or publicly accessible datastores?"}},
+  kspm: {short:"Assessment of Kubernetes cluster and workload configurations against security benchmarks.",detail:"Checks: Do containers run as root? Are network policies defined? Is RBAC least-privilege? Do admission controllers validate images? Benchmarks: CIS Kubernetes."},
+  ciem: {short:"Analysis of cloud identities and permissions to detect excessive privileges and escalation paths.",detail:"In AWS: 95%+ of granted permissions are never used. CIEM identifies this and recommends right-sizing. Critical because identity is the new perimeter in cloud.",lenses:{reach:"Are there identities with access from any IP?",priv:"Are there admin permissions that are never used?",data:"Do identities have access to data they don't need?"}},
+  dspm: {short:"Discovery and classification of sensitive data and identification of risky access paths.",detail:"Answers: Where is your PII/PHI/PCI? Who has access? Is it encrypted? Are there copies in unexpected places? Complements CIEM: CIEM sees permissions, DSPM sees data.",lenses:{reach:"Is sensitive data in exposed locations?",priv:"Who has access to the most critical data?",data:"Is data properly classified and protected?"}},
+  containersec: {short:"Security controls for container images, registries, runtime behavior, and orchestration platforms.",detail:"Covers the entire container lifecycle: base image (has CVEs?), build (scanned in CI?), registry (signed?), runtime (drift detected?), orchestration (Kubernetes).",lenses:{reach:"Do containers expose unnecessary ports?",priv:"Do containers run as root or with excessive capabilities?",data:"Do containers access secrets or sensitive data?"}},
+  k8ssec: {short:"Security of Kubernetes clusters: RBAC, network policies, admission control, and workload isolation.",detail:"Kubernetes is the OS of the modern cloud. Its security includes: granular RBAC, network policies for microsegmentation, pod security standards, and admission webhooks."},
+  compliance: {short:"Adherence to regulatory and industry standards: ISO, SOC2, PCI, NIST, and privacy regulations.",detail:"It's not security — it's proving you have security. Compliance without security is checkbox theater. Security without compliance is legal risk. You need both.",lenses:{reach:"Do compliance controls cover all exposed assets?",priv:"Is the least privilege principle implemented and evidenced?",data:"Is regulated data protected per requirements?"}},
+  governance: {short:"Processes that define ownership, accountability, risk acceptance, and escalation mechanisms.",detail:"Who owns remediating this vulnerability? Who accepts the risk if it's not remediated? What's the escalation process? Without governance, TAVM is just scanning and praying."},
+  aisec: {short:"Security discipline focused on protecting AI systems, models, data, and AI-driven applications.",detail:"A new, explosively growing domain. Includes: model security, training data, inference pipelines, autonomous agents. Different from 'using AI for security'.",lenses:{reach:"Are AI models or endpoints externally accessible?",priv:"Do models have access to privileged data or systems?",data:"Does training data or outputs contain sensitive information?"}},
+  aispm: {short:"Security posture management for AI assets: models, endpoints, agents, pipelines, and vector DBs.",detail:"Like CSPM but for AI. Discovers shadow AI, evaluates model configurations, detects sensitive data in training data, maps compliance (EU AI Act, NIST AI RMF)."},
+  aibom: {short:"Inventory of AI components: models, datasets, frameworks, agents, and integrations.",detail:"Like SBOM but for AI. What models do you use? Where does training data come from? What frameworks? What agents are deployed? Requirement for EU AI Act."},
+  llm: {short:"AI model trained on large datasets to generate text, code, or reasoning outputs.",detail:"GPT, Claude, Llama, Gemini, etc. From a security perspective: powerful but vulnerable to prompt injection, data leakage, and can be exploited as attack vectors."},
+  llmsec: {short:"Controls to prevent prompt injection, data leakage, unsafe outputs, and misuse of LLM applications.",detail:"OWASP LLM Top 10: Prompt Injection (#1), Insecure Output Handling, Training Data Poisoning, Model DoS, Supply Chain Vulnerabilities, etc. Prompt injection remains the most exploited."},
+  aispm_agentic: {short:"Governance and security of autonomous AI agents, MCP servers, and non-human actors.",detail:"The newest frontier: AG-SPM (posture) and AG-DR (detection/response) for agents. Shadow MCP is the new shadow IT. 48.9% of orgs are blind to machine-to-machine traffic."},
+  aiobs: {short:"Monitoring of AI system behavior: prompts, outputs, performance, safety, and costs.",detail:"What are users asking the model? What does it respond? Is there data leakage in outputs? Are there abuse patterns? Key for compliance and misuse detection.",lenses:{reach:"Are AI monitoring endpoints accessible?",priv:"Are actions of agents with elevated permissions monitored?",data:"Is sensitive data leakage detected in AI outputs?"}},
+  genai: {short:"AI systems that generate text, images, code, or other artifacts based on user prompts.",detail:"The broad category that includes LLMs, image generators, code assistants. From TAVM: every GenAI deployment is a new attack surface that needs inventory and monitoring."},
+  rag: {short:"Architecture where LLMs retrieve external data sources to ground responses with factual context.",detail:"Security risk: indirect prompt injection via retrieved documents. An attacker can inject malicious instructions in documents consumed by the RAG pipeline."},
+  finops: {short:"Practice of managing and optimizing cloud and AI costs through visibility, accountability, and controls.",detail:"Security connection: a compute cost spike may indicate cryptomining. A sudden increase in AI API calls may indicate exfiltration. FinOps as a security signal.",lenses:{reach:"Are costly resources exposed?",priv:"Who has permissions to provision costly resources?",data:"Do cost anomalies correlate with sensitive data access?"}},
+  costvis: {short:"Ability to track and attribute infrastructure and AI costs to services, teams, and business units.",detail:"Who spends what? On which service? If you can't see costs, you can't detect anomalies. Prerequisite for detecting compromise via financial signals."},
+  costanomaly: {short:"Identification of abnormal spending patterns that may indicate misconfigurations or security incidents.",detail:"Real example: a compromised Lambda function mining crypto generates a $50K spike in a weekend. Cost anomaly detection catches it before the SIEM."},
+  ctem: {short:"Gartner's five-stage framework for continuously and systematically reducing security exposure.",detail:"5 stages: Scoping → Discovery → Prioritization → Validation → Mobilization. Not a product — it's a program that orchestrates VM, ASM, and validation tools in a continuous cycle. Gartner predicts CTEM-aligned organizations will be 3x less likely to suffer breaches."},
+  crq: {short:"Translates cyber threats into financial risk language using models like FAIR and Monte Carlo simulations.",detail:"Risk = LEF × LM. Metrics: ALE, PML, VaR/TVaR. Replaces heat maps with modeled loss forecasts. Market projected to $900M by 2033. Boards no longer accept heat maps — they want numbers."},
+  fair: {short:"International standard for CRQ: Risk = Loss Event Frequency × Loss Magnitude with Monte Carlo simulation.",detail:"LEF: probable frequency of loss events. LM: financial impact (primary costs: response, interruption; secondary costs: fines, litigation, brand damage). Uses Monte Carlo for probabilistic ranges."},
+  cnapp: {short:"Unified platform combining CSPM, CWPP, CIEM, and more into an integrated cloud security suite.",detail:"The convergence: instead of buying CSPM + CWPP + CIEM + KSPM separately, a CNAPP integrates them. Leaders: Wiz, Prisma Cloud, Orca. The market consolidated rapidly."},
+  easm: {short:"Discovery of internet-facing assets: domains, IPs, APIs, forgotten cloud services.",detail:"See what an attacker sees from outside. Discovers shadow IT, forgotten domains, exposed APIs, public buckets. Key part of CTEM stage 2 (Discovery)."},
+  bas: {short:"Automated validation of security controls by simulating real attack techniques (MITRE ATT&CK).",detail:"Do your controls actually work? BAS simulates ransomware, lateral movement, exfiltration and tells you what happened. Part of CTEM stage 4 (Validation). Tools: Cymulate, SafeBreach, AttackIQ."},
+  rasp: {short:"In-application security controls that detect and block attacks based on code execution.",detail:"Instrumented inside the app. Can detect and block SQLi, XSS at runtime because it sees the execution context. Trade-off: performance impact."},
+  iast: {short:"Runtime analysis that detects vulnerabilities while the application executes real requests.",detail:"Combines the best of SAST and DAST: instruments the app and analyzes during execution. Fewer false positives than SAST because it has runtime context. But requires real traffic."},
+  waf: {short:"Security control that filters and blocks malicious HTTP/API traffic before it reaches the application.",detail:"First line of perimeter defense for web apps. Blocks SQLi, XSS, bots, layer 7 DDoS. Doesn't replace secure coding — it's defense in depth."},
+  lens_reach: {short:"Is the asset or vulnerability exposed to external attackers or reachable via lateral movement?",detail:"First prioritization filter. If a Critical vulnerability is not reachable from the internet or by lateral movement, its real risk drops significantly. Context > CVSS score."},
+  lens_priv: {short:"Does exploitation lead to elevated access, privileged identities, or escalation paths?",detail:"Second filter. A medium that gives admin is worse than a critical that gives read-only. Evaluate: What privileges does the attacker gain? Can they move laterally? Can they escalate to domain admin?"},
+  lens_data: {short:"Does exploitation expose PII/PHI/PCI, secrets, or regulated data?",detail:"Third filter. A vulnerability on a test server with no data ≠ the same vulnerability on a server with 10M customer records. The data defines the real impact."},
+};
+
+// English translations for DOMAINS
+const DOMAINS_EN = {
+  "1.1": {itsec:"Identifies code, dependency, and IaC risks before production using scans, reviews, and pentests.",bau_tavm:"Tracks vulnerabilities across code, images, and IaC and routes findings to owning teams."},
+  "1.2": {itsec:"Ensures security controls are embedded in CI/CD pipelines before apps reach production.",bau_tavm:"Feeds recurring issues back into pipelines to prevent re-introduction of known risks."},
+  "1.3": {itsec:"Assesses secure design, code quality, and SDLC controls to reduce future security debt.",bau_tavm:"Uses runtime and defect trends to drive long-term security debt reduction."},
+  "2.1": {itsec:"Assesses baseline runtime protections against malware, misuse, and common attack techniques.",bau_tavm:"Detects and escalates runtime threats in real time."},
+  "2.2": {itsec:"Establishes vulnerability baseline and risk acceptance decisions.",bau_tavm:"Prioritizes, tracks, and escalates based on risk, exposure, and business impact."},
+  "2.3": {itsec:"Confirms logging and detection requirements.",bau_tavm:"Correlates signals and escalates incidents using automated workflows."},
+  "2.4": {itsec:"Validates observability readiness for security investigations.",bau_tavm:"Correlates vulnerabilities with real application behavior."},
+  "2.5": {itsec:"Evaluates automation readiness for alerts and remediation.",bau_tavm:"Automates triage, ticket creation, and remediation at scale."},
+  "3.1": {itsec:"Validates cloud and Kubernetes posture before go-live.",bau_tavm:"Continuously monitors misconfigurations and posture drift."},
+  "3.2": {itsec:"Reviews permissions and data exposure risks.",bau_tavm:"Detects excessive permissions and sensitive data exposure."},
+  "3.3": {itsec:"Verifies container images and cluster configurations.",bau_tavm:"Continuously identifies risks across environments."},
+  "3.4": {itsec:"Verifies regulatory requirements before production.",bau_tavm:"Provides continuous evidence and escalates to GRC."},
+  "4.1": {itsec:"Ensures AI components are inventoried and assessed before production.",bau_tavm:"Monitors for misconfigurations and emerging AI risks."},
+  "4.2": {itsec:"Confirms GenAI monitoring for misuse and failures.",bau_tavm:"Detects abnormal usage patterns indicating abuse or leakage."},
+  "4.3": {itsec:"Reviews cost visibility to detect abuse or misconfigurations.",bau_tavm:"Flags cost anomalies signaling compromise."},
+};
+
+// English translations for DEEP_TOPICS
+const DEEP_TOPICS_EN = {
+  "dd-ctem": {name:"CTEM Framework", group:"Frameworks", content:`
+    <h2>CTEM — Continuous Threat Exposure Management</h2>
+    <p class="dd-subtitle">Gartner Framework (2022) · 5 Stages · A Program, Not a Product</p>
+    <div class="dd-block">
+      <h3>What Is It and Why Does It Matter?</h3>
+      <p>CTEM is the evolution of traditional vulnerability management. Traditional VM focuses on CVEs with periodic scanning. CTEM is broader: it covers <strong>any exposure</strong> that puts data, identity, or infrastructure at risk, operating as a continuous cycle aligned to business priorities.</p>
+    </div>
+    <div class="dd-block">
+      <h3>The 5 Stages</h3>
+      <p><strong>1. Scoping</strong> — Define critical assets and exposure boundaries by BU or infrastructure type. You can't protect everything equally; start with what matters to the business.</p>
+      <p><strong>2. Discovery</strong> — Identify ALL exposures, not just CVEs: misconfigurations, credential leaks, lookalike domains, shadow IT. Tools: EASM, CSPM, ASPM.</p>
+      <p><strong>3. Prioritization</strong> — Rank by business context, attack path analysis, and real exploitability. This is where the 3 Risk Lenses (Reachability, Privilege, Data Sensitivity) and CRQ come in.</p>
+      <p><strong>4. Validation</strong> — Test whether exposures are actually exploitable and controls actually work. Tools: BAS, pentesting, red teaming.</p>
+      <p><strong>5. Mobilization</strong> — Drive cross-functional remediation with clear ownership and accountability. Without this, you have nice dashboards but aren't reducing risk.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Key Data</h3>
+      <p><span class="dd-key-stat">3x fewer breaches</span> for CTEM-aligned orgs (Gartner 2026 prediction)</p>
+      <p><span class="dd-key-stat">Only 16%</span> of orgs have achieved operational implementation</p>
+      <p><span class="dd-key-stat">48h</span> 61% of vulns exploited in 2025 were weaponized in under 48 hours</p>
+      <p><span class="dd-key-stat">45 tools</span> average per organization, yet they struggle to correlate findings</p>
+    </div>
+    <div class="dd-block">
+      <h3>Tools by CTEM Stage</h3>
+      <p><strong>Discovery:</strong> EASM (external surface), CSPM/KSPM (cloud), ASPM (apps), DSPM (data)</p>
+      <p><strong>Prioritization:</strong> CRQ platforms, exposure assessment platforms (Gartner inaugural MQ 2025)</p>
+      <p><strong>Validation:</strong> BAS (Cymulate, SafeBreach, AttackIQ), pentesting, red team, Pentera</p>
+    </div>
+    <div class="dd-block">
+      <h3>Related Terms</h3>
+      <div class="dd-terms-in-domain" id="dd-ctem-terms"></div>
+    </div>
+  `},
+  "dd-crq": {name:"CRQ & FAIR", group:"Frameworks", content:`
+    <h2>CRQ — Cyber Risk Quantification</h2>
+    <p class="dd-subtitle">From Heat Maps to Financial Models · FAIR Model · Monte Carlo</p>
+    <div class="dd-block">
+      <h3>The Problem It Solves</h3>
+      <p>Boards and C-suite no longer accept "high risk" in red. They want to know: <strong>"How much money could we lose and with what probability?"</strong> CRQ translates cyber risk into the same language as credit risk, market risk, and insurance.</p>
+    </div>
+    <div class="dd-block">
+      <h3>The FAIR Model</h3>
+      <p><strong>Risk = LEF × LM</strong></p>
+      <p><strong>LEF (Loss Event Frequency)</strong> — Probable frequency of loss events within a specific period.</p>
+      <p><strong>LM (Loss Magnitude)</strong> — Total financial impact:</p>
+      <ul>
+        <li>Primary losses: incident response, business interruption, recovery costs</li>
+        <li>Secondary losses: regulatory fines, litigation, brand damage, customer loss</li>
+      </ul>
+      <p><strong>Monte Carlo simulation</strong> is used to calculate ranges of probable loss, not a single number.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Key Metrics</h3>
+      <p><strong>ALE</strong> (Annualized Loss Expectancy) — Expected annualized loss</p>
+      <p><strong>PML</strong> (Probable Maximum Loss) — Probable worst-case scenario</p>
+      <p><strong>VaR / TVaR</strong> — Value-at-Risk / Tail-Value-at-Risk (borrowed from finance)</p>
+      <p><strong>Time-to-Loss</strong> — How quickly damage materializes</p>
+    </div>
+    <div class="dd-block">
+      <h3>CRQ + CTEM = The Winning Combination</h3>
+      <p>Instead of prioritizing by CVSS score (technical), you prioritize by modeled financial impact. A CVSS 7.5 affecting your payment system deserves more attention than a CVSS 9.8 on a test server with no data.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Market Data</h3>
+      <p><span class="dd-key-stat">$900M by 2033</span> CRQ market (from $340M in 2024, 12% CAGR)</p>
+      <p><span class="dd-key-stat">Boards demand $$$</span> Heat maps are being rejected by auditors and executives</p>
+    </div>
+  `},
+  "dd-aisec": {name:"AI Security", group:"Emerging", content:`
+    <h2>AI Security Landscape (2025-2026)</h2>
+    <p class="dd-subtitle">AI-SPM · Agentic Security · Shadow AI · EU AI Act</p>
+    <div class="dd-block">
+      <h3>Why Is AI Security Different?</h3>
+      <p>CSPM secures cloud configuration. DSPM protects data. <strong>AI-SPM</strong> addresses AI-specific risks that neither covers: prompt injection, model extraction, data poisoning, adversarial attacks, behavioral drift.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Alarming Data</h3>
+      <p><span class="dd-key-stat">$5.72M</span> average cost of AI-powered breach</p>
+      <p><span class="dd-key-stat">$670K more</span> than average breaches when shadow AI is involved</p>
+      <p><span class="dd-key-stat">Only 6%</span> of orgs have advanced AI security (vs $2.5T in AI spending)</p>
+      <p><span class="dd-key-stat">94%</span> of orgs using OpenAI have at least one unrestricted public account</p>
+    </div>
+    <div class="dd-block">
+      <h3>Agentic Security — The Newest Frontier</h3>
+      <p><strong>AG-SPM</strong>: Continuous discovery and governance of the agentic lifecycle, from code to runtime.</p>
+      <p><strong>AG-DR</strong>: Detection and response with agentic-aware baselines for anomalous patterns.</p>
+      <p><strong>Shadow MCP</strong>: The new shadow IT — unauthorized MCP server deployments bypassing formal channels.</p>
+      <p><span class="dd-key-stat">48.9% blind</span> to machine-to-machine traffic</p>
+    </div>
+    <div class="dd-block">
+      <h3>Top Threats (OWASP LLM Top 10)</h3>
+      <ul>
+        <li><strong>Prompt Injection</strong> — #1 most exploited. Direct (user attacks) and indirect (via RAG/documents)</li>
+        <li><strong>Data Poisoning</strong> — Contaminating training data to alter model behavior</li>
+        <li><strong>Model Extraction</strong> — Stealing the model via repeated queries</li>
+        <li><strong>Insecure Output Handling</strong> — LLM output is executed without sanitization</li>
+      </ul>
+    </div>
+    <div class="dd-block">
+      <h3>Regulatory Timeline</h3>
+      <p><span class="dd-key-stat">Aug 2, 2026</span> EU AI Act high-risk enforcement deadline</p>
+      <p>Relevant standards: NIST AI RMF, OWASP LLM Top 10, MITRE ATLAS, ISO/IEC 42001</p>
+    </div>
+  `},
+  "dd-lenses": {name:"Risk Lenses", group:"Framework", content:`
+    <h2>The 3 Risk Lenses</h2>
+    <p class="dd-subtitle">Applied to EVERY domain · Context-based prioritization</p>
+    <div class="dd-block">
+      <h3>Why Isn't CVSS Enough?</h3>
+      <p>CVSS tells you the technical severity of a vulnerability in a vacuum. Risk Lenses tell you the severity <strong>in your specific context</strong>. An internal CVSS 9.8 without sensitive data may be less urgent than a CVSS 7.0 exposed to the internet with access to millions of customers' PII.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Lens 1: Reachability</h3>
+      <p><strong>Question:</strong> Can an attacker reach this?</p>
+      <p>Evaluate: internet exposure, lateral movement accessibility, network segmentation. If it's unreachable, the real risk drops drastically regardless of CVSS.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Lens 2: Privilege</h3>
+      <p><strong>Question:</strong> What does the attacker gain if they exploit it?</p>
+      <p>Evaluate: post-exploitation access level, escalation potential, lateral movement, credential access. A medium that gives domain admin > a critical that gives read-only.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Lens 3: Data Sensitivity</h3>
+      <p><strong>Question:</strong> What data is at stake?</p>
+      <p>Evaluate: presence of PII/PHI/PCI, secrets, regulated data. Defines the real breach impact and regulatory and legal consequences.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Practical Application</h3>
+      <p>Every TAVM finding should pass through the 3 lenses to determine real priority. This transforms a list of 10,000 vulnerabilities into a list of 200 that actually matter.</p>
+    </div>
+  `},
+  "dd-modes": {name:"ITSec vs bau_tavm", group:"Framework", content:`
+    <h2>Initial Assessment (ITSec) vs bau_tavm</h2>
+    <p class="dd-subtitle">Pre-production vs Continuous Operation · Two modes per domain</p>
+    <div class="dd-block">
+      <h3>Two Sides of the Same Coin</h3>
+      <p>Each of the 15 domains operates in two modes. They're not separate programs — they're phases of the same security lifecycle.</p>
+    </div>
+    <div class="dd-comparison">
+      <div class="dd-comp-box">
+        <h4 style="color:var(--accent1)">Initial Assessment (ITSec)</h4>
+        <p>Pre-production validation. Do security controls exist before go-live? Entry gate. Point-in-time snapshot. Goal: don't deploy insecure.</p>
+      </div>
+      <div class="dd-comp-box">
+        <h4 style="color:var(--accent2)">bau_tavm</h4>
+        <p>Continuous operational management. Monitoring, prioritization, and remediation in production. Continuous cycle. Goal: sustainably reduce operational risk.</p>
+      </div>
+    </div>
+    <div class="dd-block" style="margin-top:20px">
+      <h3>Example: Domain 1.1 (Application Security)</h3>
+      <p><strong>ITSec:</strong> "Before going to production, did we run SAST, SCA, review the SBOM, and scan the IaC? Are there unresolved critical findings?"</p>
+      <p><strong>bau_tavm:</strong> "In production, are we tracking new vulnerabilities in dependencies? Are findings automatically routed to the owning team?"</p>
+    </div>
+    <div class="dd-block">
+      <h3>The Bridge Between Both</h3>
+      <p>What you find in ITSec feeds your bau_tavm baseline. What you discover in bau_tavm improves your ITSec checks. They're a feedback loop, not silos.</p>
+    </div>
+  `},
+  "dd-tools": {name:"Tool Landscape", group:"Reference", content:`
+    <h2>Tool Landscape — Quick Reference</h2>
+    <p class="dd-subtitle">CNAPP · Observability · CRQ · When to use what</p>
+    <div class="dd-block">
+      <h3>CNAPP / Cloud Security</h3>
+      <p><strong>Wiz</strong> — Agentless, fast deployment, graph-based attack paths. Premium pricing, less runtime depth.</p>
+      <p><strong>Prisma Cloud</strong> — Comprehensive CNAPP, code-to-cloud. Complex deployment, steep learning curve.</p>
+      <p><strong>Orca</strong> — Agentless, deep scanning, AI-SPM. Smaller market share than Wiz.</p>
+      <p><strong>Defender for Cloud</strong> — Native Azure integration, cost-effective. Weak multi-cloud, limited CIEM.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Observability & Security</h3>
+      <p><strong>Datadog</strong> — Unified platform, strong APM + security. Costly at scale, data volume pricing.</p>
+      <p><strong>Dynatrace</strong> — AI-powered (Davis), strong APM. Security features maturing, complex licensing.</p>
+      <p><strong>Splunk</strong> — Powerful SIEM, mature ecosystem. Expensive, resource-intensive.</p>
+    </div>
+    <div class="dd-block">
+      <h3>CRQ Platforms</h3>
+      <p><strong>SAFE Security</strong> — FAIR-based, agentic AI, 100+ integrations. Newer platform, growing ecosystem.</p>
+      <p><strong>Kovrr</strong> — Insurance-grade modeling, industry benchmarks. More focused on insurance use cases.</p>
+      <p><strong>Bitsight</strong> — External risk ratings, third-party risk. Less internal CRQ depth.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Selection Principle</h3>
+      <p>There is no perfect tool. The decision depends on: cloud stack (Azure-heavy → Defender), program maturity (early → Wiz for speed), budget, and what integrations you need. Always evaluate trade-offs.</p>
+    </div>
+  `},
+  "dd-priorities": {name:"2026 Priorities", group:"Reference", content:`
+    <h2>Strategic Priorities for TAVM Leaders (2026)</h2>
+    <p class="dd-subtitle">8 actionable priorities for program leaders</p>
+    <div class="dd-block">
+      <p><strong>1. Evolve from VM to CTEM</strong> — Move beyond CVE scanning to continuous exposure management aligned with business priorities.</p>
+      <p><strong>2. Embed CRQ into operations</strong> — Replace heat maps with financial risk modeling for board-level communication.</p>
+      <p><strong>3. Address AI security proactively</strong> — Establish AI-SPM capabilities before EU AI Act enforcement (August 2026).</p>
+      <p><strong>4. Integrate the 3 Risk Lenses</strong> — Systematically apply Reachability, Privilege, and Data Sensitivity to every finding.</p>
+      <p><strong>5. Automate aggressively</strong> — Use AIOps to reduce noise, auto-triage, and enforce SLA-based remediation.</p>
+      <p><strong>6. Bridge ITSec ↔ bau_tavm</strong> — Ensure pre-production security validation feeds into operational TAVM.</p>
+      <p><strong>7. Quantify ROI</strong> — Use CRQ to demonstrate that security investments deliver measurable risk reduction.</p>
+      <p><strong>8. Prepare for agentic security</strong> — Build governance frameworks for AI agents and MCP servers before they proliferate.</p>
+    </div>
+  `},
+};
+
+// Deep dive group names translation
+const GROUP_NAMES_EN = {
+  "Frameworks": "Frameworks",
+  "Emerging": "Emerging",
+  "Framework": "Framework",
+  "Reference": "Reference",
+};
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.lang-toggle button[onclick="setLang('${lang}')"]`).classList.add('active');
+  document.documentElement.lang = lang;
+  updateUI();
+}
+
+function t(key) {
+  return i18n[currentLang][key] || i18n['es'][key] || key;
+}
+
+function getTermText(term, field) {
+  if (currentLang === 'en' && TERMS_EN[term.id]) {
+    const en = TERMS_EN[term.id];
+    if (field === 'short' && en.short) return en.short;
+    if (field === 'detail' && en.detail) return en.detail;
+    if (field === 'lenses' && en.lenses) return en.lenses;
+  }
+  if (field === 'lenses') return term.lenses;
+  return term[field];
+}
+
+function getDomainText(domain, field) {
+  if (currentLang === 'en' && DOMAINS_EN[domain.id]) {
+    return DOMAINS_EN[domain.id][field] || domain[field];
+  }
+  return domain[field];
+}
+
+function updateUI() {
+  // Header
+  document.querySelector('.header h1').textContent = t('title');
+  document.querySelector('.header p').textContent = t('subtitle');
+
+  // Nav buttons
+  const navBtns = document.querySelectorAll('.nav-btn');
+  navBtns[0].textContent = t('navGlossary');
+  navBtns[1].textContent = t('navMindmap');
+  navBtns[2].textContent = t('navDeepDive');
+
+  // Restore onclick handlers
+  navBtns[0].onclick = function(e) { showSection('glossary'); };
+  navBtns[1].onclick = function(e) { showSection('mindmap'); };
+  navBtns[2].onclick = function(e) { showSection('deepdive'); };
+
+  // Search
+  document.getElementById('searchInput').placeholder = t('searchPlaceholder');
+
+  // Filter chips
+  const chips = document.querySelectorAll('.filter-chip');
+  const chipLabels = ['filterAll','filterCap1','filterCap2','filterCap3','filterCap4','filterFrameworks','filterLenses'];
+  chips.forEach((chip, i) => { if (chipLabels[i]) chip.textContent = t(chipLabels[i]); });
+
+  // Lens cards in mindmap
+  const lensCards = document.querySelectorAll('.lens-card');
+  if (lensCards.length === 3) {
+    lensCards[0].querySelector('h4').innerHTML = `<span class="lens-dot" style="background:var(--lens-reach)"></span> ${t('lensReachTitle')}`;
+    lensCards[0].querySelector('p').textContent = t('lensReachDesc');
+    lensCards[1].querySelector('h4').innerHTML = `<span class="lens-dot" style="background:var(--lens-priv)"></span> ${t('lensPrivTitle')}`;
+    lensCards[1].querySelector('p').textContent = t('lensPrivDesc');
+    lensCards[2].querySelector('h4').innerHTML = `<span class="lens-dot" style="background:var(--lens-data)"></span> ${t('lensDataTitle')}`;
+    lensCards[2].querySelector('p').textContent = t('lensDataDesc');
+  }
+
+  // Deep dive default text
+  const ddContent = document.getElementById('ddContent');
+  if (ddContent && ddContent.children.length === 1 && ddContent.children[0].tagName === 'P') {
+    ddContent.innerHTML = `<p style="color:var(--text-dim);font-size:14px;">${t('selectTopic')}</p>`;
+  }
+
+  // Re-render current view
+  const activeFilter = document.querySelector('.filter-chip.active');
+  const cap = activeFilter ? activeFilter.dataset.cap : 'all';
+  renderGlossary(cap, document.getElementById('searchInput').value);
+
+  // Re-render mindmap if visible
+  if (document.getElementById('sec-mindmap').classList.contains('active')) renderMindmap();
+  // Re-render deep dive sidebar if visible
+  if (document.getElementById('sec-deepdive').classList.contains('active')) renderDeepDive();
+}
+
+// ===== DATA =====
+const TERMS = [
+  // Cap 1: Secure Engineering & SDLC
+  {id:"appsec",name:"Application Security",short:"Disciplina de identificar y reducir riesgos en código, dependencias, IaC y comportamiento runtime.",cap:"1",domain:"1.1",
+   detail:"Abarca todo el ciclo: desde análisis estático del código fuente hasta monitoreo en producción. Es el paraguas que contiene SAST, SCA, SBOM, ASPM e IaC scanning.",
+   related:["aspm","sast","sca","sbom","iac"],
+   lenses:{reach:"¿El código vulnerable está desplegado en endpoints expuestos a internet?",priv:"¿La app usa identidades con altos privilegios o acceso de escritura?",data:"¿El código/dependencia toca PII/PHI/PCI o flujos de datos regulados?"}},
+  {id:"aspm",name:"ASPM",full:"Application Security Posture Management",short:"Gestión unificada del riesgo de seguridad de aplicaciones a través de código, pipelines, cloud y runtime.",cap:"1",domain:"1.1",
+   detail:"Consolida hallazgos de SAST, SCA, DAST, IaC y runtime en una vista unificada con ownership. La evolución de tener 5 dashboards separados a uno solo correlacionado.",
+   related:["sast","sca","sbom","iac","devsecops"],
+   lenses:{reach:"Correlaciona hallazgos de código con exposición real en producción",priv:"Identifica qué servicios corren con privilegios elevados",data:"Mapea flujos de datos sensibles a través del stack de la aplicación"}},
+  {id:"sast",name:"SAST",full:"Static Application Security Testing",short:"Análisis estático del código fuente para detectar patrones inseguros antes de que la aplicación se ejecute.",cap:"1",domain:"1.1",
+   detail:"Escanea código sin ejecutarlo. Encuentra SQLi, XSS, hardcoded secrets, buffer overflows. Limitación: alto ratio de falsos positivos porque no tiene contexto de runtime.",
+   related:["aspm","iast","sca"],lenses:null},
+  {id:"sca",name:"SCA",full:"Software Composition Analysis",short:"Análisis de dependencias open-source y third-party para identificar vulnerabilidades conocidas y paquetes maliciosos.",cap:"1",domain:"1.1",
+   detail:"Escanea bibliotecas y dependencias (npm, PyPI, Maven, etc.) contra bases de datos de CVEs. Clave para supply chain security — el 80%+ del código de una app es open-source.",
+   related:["sbom","aspm","sast"],lenses:null},
+  {id:"sbom",name:"SBOM",full:"Software Bill of Materials",short:"Inventario formal de todos los componentes de software, versiones y dependencias de una aplicación.",cap:"1",domain:"1.1",
+   detail:"Es la 'lista de ingredientes' del software. Crítico para respuesta a incidentes (ej: '¿tenemos Log4j?') y cumplimiento regulatorio. Formatos: SPDX y CycloneDX.",
+   related:["sca","aspm","aibom"],lenses:null},
+  {id:"iac",name:"IaC",full:"Infrastructure as Code",short:"Definiciones declarativas de infraestructura cloud que pueden escanearse para prevenir configuraciones inseguras antes del deploy.",cap:"1",domain:"1.1",
+   detail:"Terraform, CloudFormation, Pulumi, etc. Se escanea para detectar S3 buckets públicos, security groups abiertos, encriptación deshabilitada — antes de que existan en la nube.",
+   related:["cspm","devsecops","aspm"],lenses:null},
+  {id:"devsecops",name:"DevSecOps",short:"Integración de controles de seguridad y automatización en workflows DevOps a lo largo del ciclo de vida del software.",cap:"1",domain:"1.2",
+   detail:"No es un producto sino una práctica. Significa que seguridad no es un gate al final sino que está embebida en cada paso: commit hooks, pipeline gates, container scanning, etc.",
+   related:["shiftleft","aspm","sast","sca"],
+   lenses:{reach:"¿CI/CD previene shipping de exposición pública (puertos abiertos, buckets públicos)?",priv:"¿Los roles de pipeline y service principals son least-privileged?",data:"¿Los pipelines previenen secrets/PII en código, artifacts y logs?"}},
+  {id:"shiftleft",name:"Shift-Left",short:"Enfoque de seguridad que detecta issues más temprano en el ciclo de desarrollo para reducir costo y riesgo.",cap:"1",domain:"1.2",
+   detail:"El principio: mientras más temprano encuentres un bug, más barato es arreglarlo. Encontrar un SQLi en code review cuesta $100; en producción después de un breach, millones.",
+   related:["devsecops","sast","sdlc"],lenses:null},
+  {id:"sdlc",name:"SDLC",full:"Software Development Life Cycle",short:"Proceso end-to-end de diseñar, construir, probar, desplegar y mantener software.",cap:"1",domain:"1.3",
+   detail:"Las fases típicas: Requirements → Design → Development → Testing → Deployment → Maintenance. Seguridad debe integrarse en cada fase, no solo en testing.",
+   related:["shiftleft","devsecops","threatmodel"],
+   lenses:{reach:"¿Los diseños crean superficies de ataque públicas (auth flows, APIs)?",priv:"¿Los workflows permiten escalamiento de privilegios?",data:"¿Los flujos de negocio exponen datos sensibles?"}},
+  {id:"threatmodel",name:"Threat Modeling",short:"Proceso estructurado para identificar attack paths, casos de uso malicioso y debilidades de diseño temprano en el SDLC.",cap:"1",domain:"1.3",
+   detail:"Frameworks populares: STRIDE (Microsoft), PASTA, Attack Trees. Se hace durante la fase de diseño. Pregunta clave: '¿qué puede salir mal y cómo lo explotaría un atacante?'",
+   related:["sdlc","shiftleft"],lenses:null},
+
+  // Cap 2: Runtime Protection & TAVM
+  {id:"cwpp",name:"CWPP",full:"Cloud Workload Protection Platform",short:"Controles de seguridad runtime que protegen workloads cloud: VMs, containers y funciones serverless.",cap:"2",domain:"2.1",
+   detail:"Protección en ejecución: anti-malware, detección de comportamiento anómalo, file integrity monitoring, vulnerability scanning del workload en runtime.",
+   related:["cdr","runtime","cnapp"],
+   lenses:{reach:"¿El workload tiene puertos expuestos o es accesible desde internet?",priv:"¿El workload tiene IAM roles con permisos excesivos?",data:"¿El workload procesa o almacena datos sensibles?"}},
+  {id:"cdr",name:"CDR",full:"Cloud Detection and Response",short:"Detección y respuesta a amenazas cloud-native usando telemetría de workloads, identidad y control plane.",cap:"2",domain:"2.1",
+   detail:"Complementa CWPP con capacidad de respuesta. Detecta lateral movement, credential theft, anomalías en API calls de cloud providers.",
+   related:["cwpp","siem","threatdetect"],lenses:null},
+  {id:"runtime",name:"Runtime Protection",short:"Controles de seguridad que operan mientras aplicaciones y workloads están corriendo en producción.",cap:"2",domain:"2.1",
+   detail:"Incluye RASP, WAF, CWPP y cualquier control que actúa en tiempo real durante la ejecución. A diferencia de SAST/SCA que son pre-producción.",
+   related:["cwpp","rasp","waf"],lenses:null},
+  {id:"tavm",name:"TAVM or TVM, also bau_tavm",full:"Threat and Vulnerability Management",short:"Proceso continuo de descubrir, priorizar, remediar y trackear vulnerabilidades basado en riesgo real.",cap:"2",domain:"2.2",
+   detail:"El corazón de este programa. No es solo escanear — es priorizar por impacto de negocio, trackear SLAs de remediación, escalar lo que importa, y medir reducción de riesgo.",
+   related:["ctem","crq","cwpp"],
+   lenses:{reach:"¿La vulnerabilidad es alcanzable por un atacante externo?",priv:"¿La explotación escala privilegios?",data:"¿La explotación expone datos regulados?"}},
+  {id:"threatdetect",name:"Threat Detection",short:"Identificación de actividad maliciosa o anómala usando logs, señales y análisis de comportamiento.",cap:"2",domain:"2.3",
+   detail:"Va más allá de vulnerability scanning: busca indicadores de compromiso activo (IOCs), comportamiento anómalo, movimiento lateral en progreso.",
+   related:["siem","cloudsiem","cdr"],lenses:null},
+  {id:"siem",name:"SIEM",full:"Security Information and Event Management",short:"Plataforma centralizada para colectar, correlacionar y analizar eventos y logs de seguridad.",cap:"2",domain:"2.3",
+   detail:"Agrega logs de firewalls, endpoints, servidores, aplicaciones, cloud. Permite crear reglas de detección, correlacionar eventos y generar alertas. Herramientas: Splunk, Sentinel, Chronicle.",
+   related:["cloudsiem","threatdetect","soar"],
+   lenses:{reach:"¿Los logs cubren todos los puntos de entrada y superficies expuestas?",priv:"¿Se monitorean cambios en permisos y accesos privilegiados?",data:"¿Se detectan accesos anómalos a datos sensibles?"}},
+  {id:"cloudsiem",name:"Cloud SIEM",short:"SIEM cloud-native optimizado para logs de cloud, identidades, workloads y telemetría SaaS.",cap:"2",domain:"2.3",
+   detail:"Evolución del SIEM tradicional para el mundo cloud. Integra nativamente con AWS CloudTrail, Azure Activity Log, GCP Audit Logs, Okta, etc.",
+   related:["siem","cdr","threatdetect"],lenses:null},
+  {id:"appobs",name:"Application Observability",short:"Visibilidad del comportamiento, performance y experiencia de usuario de aplicaciones en producción.",cap:"2",domain:"2.4",
+   detail:"Los tres pilares: Metrics, Logs, Traces. Para seguridad: correlaciona vulnerabilidades con comportamiento real de la app — ¿este endpoint vulnerable realmente recibe tráfico?",
+   related:["apm","tracing","dem"],
+   lenses:{reach:"¿La observabilidad cubre endpoints expuestos?",priv:"¿Se monitorean acciones privilegiadas en la app?",data:"¿Se detecta acceso anómalo a datos sensibles?"}},
+  {id:"apm",name:"APM",full:"Application Performance Monitoring",short:"Monitoreo de performance, latencia, errores y dependencias de servicios de una aplicación.",cap:"2",domain:"2.4",
+   detail:"Datadog APM, Dynatrace, New Relic. Para TAVM: si un servicio vulnerable tiene latencia de 0ms, probablemente no recibe tráfico real — baja la prioridad.",
+   related:["appobs","tracing","dem"],lenses:null},
+  {id:"tracing",name:"Distributed Tracing",short:"Tracking end-to-end de requests a través de microservicios para entender paths de ejecución y dependencias.",cap:"2",domain:"2.4",
+   detail:"Sigue un request desde el ingress hasta la base de datos a través de N microservicios. Para seguridad: muestra si un request toca un servicio vulnerable y con qué datos.",
+   related:["apm","appobs"],lenses:null},
+  {id:"dem",name:"DEM",full:"Digital Experience Monitoring",short:"Monitoreo de experiencia real de usuario a través de RUM, tests sintéticos y session replay.",cap:"2",domain:"2.4",
+   detail:"Incluye RUM (telemetría de sesiones reales) y pruebas sintéticas. Para seguridad: detecta anomalías en comportamiento de usuario que podrían indicar account takeover.",
+   related:["rum","apm","appobs"],lenses:null},
+  {id:"rum",name:"RUM",full:"Real User Monitoring",short:"Colección de telemetría de sesiones reales de usuarios interactuando con aplicaciones.",cap:"2",domain:"2.4",
+   detail:"Captura métricas de usuarios reales: page load times, errores JS, crashes. Diferente de synthetic monitoring que simula usuarios.",
+   related:["dem","apm"],lenses:null},
+  {id:"aiops",name:"AIOps",short:"Uso de ML y analytics para correlacionar eventos, reducir ruido e identificar root causes.",cap:"2",domain:"2.5",
+   detail:"En TAVM: reduce alert fatigue agrupando vulnerabilidades relacionadas, auto-priorizando por contexto, y correlacionando hallazgos de múltiples scanners. Clave para escalar.",
+   related:["soar","siem","tavm"],
+   lenses:{reach:"Auto-prioriza issues alcanzables sobre los internos",priv:"Detecta patrones de escalamiento de privilegios",data:"Correlaciona alertas con exposición de datos sensibles"}},
+  {id:"soar",name:"SOAR",full:"Security Orchestration Automation and Response",short:"Automatización de workflows de seguridad: triage de alertas, ticketing y remediación.",cap:"2",domain:"2.5",
+   detail:"Playbooks automatizados: 'si scanner encuentra Critical en producción, crea ticket P1, notifica al team, escala si no se arregla en 48h'. Herramientas: Palo Alto XSOAR, Splunk SOAR.",
+   related:["aiops","siem","tavm"],lenses:null},
+
+  // Cap 3: Cloud & Platform Security
+  {id:"cspm",name:"CSPM",full:"Cloud Security Posture Management",short:"Detección continua de misconfigurations y violaciones de compliance en la nube.",cap:"3",domain:"3.1",
+   detail:"Escanea tu cuenta de AWS/Azure/GCP buscando: S3 buckets públicos, security groups abiertos, encriptación deshabilitada, logging apagado. Es el 'higiene check' de la nube.",
+   related:["kspm","cnapp","ciem"],
+   lenses:{reach:"¿Hay recursos cloud expuestos a internet sin necesidad?",priv:"¿Hay roles IAM over-permissioned?",data:"¿Hay datastores sin encriptación o con acceso público?"}},
+  {id:"kspm",name:"KSPM",full:"Kubernetes Security Posture Management",short:"Evaluación de configuraciones de clusters y workloads Kubernetes contra benchmarks de seguridad.",cap:"3",domain:"3.1",
+   detail:"Verifica: ¿containers corren como root? ¿network policies están definidas? ¿RBAC es least-privilege? ¿admission controllers validan imágenes? Benchmarks: CIS Kubernetes.",
+   related:["cspm","containersec","k8ssec"],lenses:null},
+  {id:"ciem",name:"CIEM",full:"Cloud Infrastructure Entitlement Management",short:"Análisis de identidades y permisos cloud para detectar privilegios excesivos y paths de escalamiento.",cap:"3",domain:"3.2",
+   detail:"En AWS: 95%+ de permisos otorgados nunca se usan. CIEM identifica esto y recomienda right-sizing. Crítico porque identidad es el nuevo perímetro en cloud.",
+   related:["dspm","cspm","cnapp"],
+   lenses:{reach:"¿Hay identidades con acceso desde cualquier IP?",priv:"¿Hay permisos de admin que nunca se usan?",data:"¿Las identidades tienen acceso a datos que no necesitan?"}},
+  {id:"dspm",name:"DSPM",full:"Data Security Posture Management",short:"Descubrimiento y clasificación de datos sensibles e identificación de paths de acceso riesgosos.",cap:"3",domain:"3.2",
+   detail:"Responde: ¿dónde está tu PII/PHI/PCI? ¿quién tiene acceso? ¿está encriptada? ¿hay copias en lugares inesperados? Complementa CIEM: CIEM ve los permisos, DSPM ve los datos.",
+   related:["ciem","cspm"],
+   lenses:{reach:"¿Hay datos sensibles en ubicaciones expuestas?",priv:"¿Quién tiene acceso a los datos más críticos?",data:"¿Los datos están clasificados y protegidos adecuadamente?"}},
+  {id:"containersec",name:"Container Security",short:"Controles de seguridad para imágenes de containers, registries, comportamiento runtime y plataformas de orquestación.",cap:"3",domain:"3.3",
+   detail:"Cubre todo el lifecycle del container: imagen base (¿tiene CVEs?), build (¿se escanea en CI?), registry (¿se firma?), runtime (¿se detecta drift?), orquestación (Kubernetes).",
+   related:["k8ssec","cwpp","kspm"],
+   lenses:{reach:"¿Los containers exponen puertos innecesarios?",priv:"¿Los containers corren como root o con capabilities excesivas?",data:"¿Los containers acceden a secrets o datos sensibles?"}},
+  {id:"k8ssec",name:"Kubernetes Security",short:"Seguridad de clusters Kubernetes: RBAC, network policies, admission control y aislamiento de workloads.",cap:"3",domain:"3.3",
+   detail:"Kubernetes es el OS de la nube moderna. Su seguridad incluye: RBAC granular, network policies para microsegmentación, pod security standards, y admission webhooks.",
+   related:["containersec","kspm","cspm"],lenses:null},
+  {id:"compliance",name:"Compliance",short:"Adherencia a estándares regulatorios e industria: ISO, SOC2, PCI, NIST y regulaciones de privacidad.",cap:"3",domain:"3.4",
+   detail:"No es seguridad — es demostrar que tienes seguridad. Compliance sin security es checkbox theater. Security sin compliance es riesgo legal. Necesitas ambos.",
+   related:["governance","cspm"],
+   lenses:{reach:"¿Los controles de compliance cubren todos los activos expuestos?",priv:"¿El principio de least privilege está implementado y evidenciado?",data:"¿Los datos regulados están protegidos según los requisitos?"}},
+  {id:"governance",name:"Governance",short:"Procesos que definen ownership, accountability, aceptación de riesgo y mecanismos de escalamiento.",cap:"3",domain:"3.4",
+   detail:"¿Quién es dueño de remediar esta vulnerabilidad? ¿Quién acepta el riesgo si no se remedia? ¿Cuál es el proceso de escalamiento? Sin governance, TAVM es solo escanear y rezar.",
+   related:["compliance","tavm"],lenses:null},
+
+  // Cap 4: Business, Risk & Emerging Security
+  {id:"aisec",name:"AI Security",short:"Disciplina de seguridad enfocada en proteger sistemas AI, modelos, datos y aplicaciones AI-driven.",cap:"4",domain:"4.1",
+   detail:"Nuevo dominio que crece explosivamente. Incluye: seguridad del modelo, datos de entrenamiento, pipelines de inferencia, agentes autónomos. Distinto de 'usar AI para seguridad'.",
+   related:["aispm","aibom","llmsec"],
+   lenses:{reach:"¿Los modelos o endpoints AI son accesibles externamente?",priv:"¿Los modelos tienen acceso a datos o sistemas privilegiados?",data:"¿Los datos de entrenamiento o outputs contienen información sensible?"}},
+  {id:"aispm",name:"AI-SPM",full:"AI Security Posture Management",short:"Gestión de postura de seguridad para activos AI: modelos, endpoints, agentes, pipelines y vector DBs.",cap:"4",domain:"4.1",
+   detail:"Como CSPM pero para AI. Descubre shadow AI, evalúa configuraciones de modelos, detecta datos sensibles en training data, mapea compliance (EU AI Act, NIST AI RMF).",
+   related:["aisec","aibom","cspm","aispm_agentic"],lenses:null},
+  {id:"aibom",name:"AI-BOM",full:"AI Bill of Materials",short:"Inventario de componentes AI: modelos, datasets, frameworks, agentes e integraciones.",cap:"4",domain:"4.1",
+   detail:"Como SBOM pero para AI. ¿Qué modelos usas? ¿De dónde vienen los datos de entrenamiento? ¿Qué frameworks? ¿Qué agentes están desplegados? Requisito para EU AI Act.",
+   related:["sbom","aisec","aispm"],lenses:null},
+  {id:"llm",name:"LLM",full:"Large Language Model",short:"Modelo AI entrenado en grandes datasets para generar texto, código o razonamiento.",cap:"4",domain:"4.1",
+   detail:"GPT, Claude, Llama, Gemini, etc. Desde perspectiva de seguridad: son potentes pero vulnerables a prompt injection, data leakage, y pueden ser explotados como vectores de ataque.",
+   related:["llmsec","genai","rag"],lenses:null},
+  {id:"llmsec",name:"LLM Security",short:"Controles para prevenir prompt injection, data leakage, outputs inseguros y mal uso de aplicaciones LLM.",cap:"4",domain:"4.1",
+   detail:"OWASP LLM Top 10: Prompt Injection (#1), Insecure Output Handling, Training Data Poisoning, Model DoS, Supply Chain Vulnerabilities, etc. Prompt injection sigue siendo la más explotada.",
+   related:["llm","aisec","rag"],lenses:null},
+  {id:"aispm_agentic",name:"Agentic Security",short:"Gobernanza y seguridad de agentes AI autónomos, servidores MCP y actores no-humanos.",cap:"4",domain:"4.1",
+   detail:"Lo más nuevo: AG-SPM (postura) y AG-DR (detección/respuesta) para agentes. Shadow MCP es el nuevo shadow IT. 48.9% de orgs son ciegas al tráfico machine-to-machine.",
+   related:["aispm","aisec","llm"],lenses:null},
+  {id:"aiobs",name:"AI Observability",short:"Monitoreo de comportamiento de sistemas AI: prompts, outputs, performance, seguridad y costos.",cap:"4",domain:"4.2",
+   detail:"¿Qué le preguntan los usuarios al modelo? ¿Qué responde? ¿Hay data leakage en los outputs? ¿Hay patrones de abuso? Clave para compliance y detección de misuse.",
+   related:["appobs","aisec","genai"],
+   lenses:{reach:"¿Los endpoints de AI monitoring son accesibles?",priv:"¿Se monitorean acciones de agentes con permisos elevados?",data:"¿Se detecta leakage de datos sensibles en outputs de AI?"}},
+  {id:"genai",name:"GenAI",full:"Generative AI",short:"Sistemas AI que generan texto, imágenes, código u otros artefactos basados en prompts de usuario.",cap:"4",domain:"4.2",
+   detail:"La categoría amplia que incluye LLMs, image generators, code assistants. Desde TAVM: cada deployment de GenAI es una nueva superficie de ataque que necesita inventario y monitoreo.",
+   related:["llm","rag","aiobs"],lenses:null},
+  {id:"rag",name:"RAG",full:"Retrieval-Augmented Generation",short:"Arquitectura donde LLMs recuperan datos de fuentes externas para dar respuestas con contexto factual.",cap:"4",domain:"4.1",
+   detail:"Riesgo de seguridad: indirect prompt injection via documentos recuperados. Un atacante puede inyectar instrucciones maliciosas en documentos que el RAG pipeline consume.",
+   related:["llm","llmsec","genai"],lenses:null},
+  {id:"finops",name:"FinOps",short:"Práctica de gestionar y optimizar costos cloud y AI a través de visibilidad, accountability y controles.",cap:"4",domain:"4.3",
+   detail:"Conexión con seguridad: un spike en costos de compute puede indicar cryptomining. Un aumento súbito en API calls de AI puede indicar exfiltración. FinOps como señal de seguridad.",
+   related:["costvis","costanomaly"],
+   lenses:{reach:"¿Los recursos costosos están expuestos?",priv:"¿Quién tiene permisos para provisionar recursos costosos?",data:"¿Los costos anómalos correlacionan con acceso a datos sensibles?"}},
+  {id:"costvis",name:"Cost Visibility",short:"Capacidad de trackear y atribuir costos de infra y AI a servicios, equipos y business units.",cap:"4",domain:"4.3",
+   detail:"¿Quién gasta qué? ¿En qué servicio? Si no puedes ver los costos, no puedes detectar anomalías. Prerequisito para detectar compromiso via señales financieras.",
+   related:["finops","costanomaly"],lenses:null},
+  {id:"costanomaly",name:"Cost Anomaly Detection",short:"Identificación de patrones de gasto anormal que pueden indicar misconfiguraciones o incidentes de seguridad.",cap:"4",domain:"4.3",
+   detail:"Ejemplo real: un Lambda function comprometido minando crypto genera un spike de $50K en un fin de semana. Cost anomaly detection lo detecta antes que el SIEM.",
+   related:["finops","costvis","aiops"],lenses:null},
+
+  // Cross-cutting / Frameworks
+  {id:"ctem",name:"CTEM",full:"Continuous Threat Exposure Management",short:"Framework de Gartner de 5 etapas para reducir exposición de seguridad de forma continua y sistemática.",cap:"core",domain:null,
+   detail:"5 etapas: Scoping → Discovery → Prioritization → Validation → Mobilization. No es un producto — es un programa que orquesta VM, ASM y herramientas de validación en un ciclo continuo. Gartner predice que organizaciones alineadas a CTEM serán 3x menos propensas a sufrir breaches.",
+   related:["tavm","crq","easm","bas"],lenses:null},
+  {id:"crq",name:"CRQ",full:"Cyber Risk Quantification",short:"Traduce amenazas cyber a lenguaje de riesgo financiero usando modelos como FAIR y simulaciones Monte Carlo.",cap:"core",domain:null,
+   detail:"Risk = LEF × LM. Métricas: ALE, PML, VaR/TVaR. Reemplaza heat maps con forecasts de pérdida modelados. Mercado proyectado a $900M para 2033. Los boards ya no aceptan heat maps — quieren números.",
+   related:["tavm","ctem","fair"],lenses:null},
+  {id:"fair",name:"FAIR Model",full:"Factor Analysis of Information Risk",short:"Estándar internacional para CRQ: Risk = Loss Event Frequency × Loss Magnitude con simulación Monte Carlo.",cap:"core",domain:null,
+   detail:"LEF: frecuencia probable de eventos de pérdida. LM: impacto financiero (costos primarios: respuesta, interrupción; secundarios: multas, litigación, daño de marca). Usa Monte Carlo para rangos probabilísticos.",
+   related:["crq"],lenses:null},
+  {id:"cnapp",name:"CNAPP",full:"Cloud-Native Application Protection Platform",short:"Plataforma unificada que combina CSPM, CWPP, CIEM y más en una suite integrada de seguridad cloud.",cap:"core",domain:null,
+   detail:"La convergencia: en vez de comprar CSPM + CWPP + CIEM + KSPM separados, un CNAPP los integra. Líderes: Wiz, Prisma Cloud, Orca. El mercado se consolidó rápidamente.",
+   related:["cspm","cwpp","ciem","kspm"],lenses:null},
+  {id:"easm",name:"EASM",full:"External Attack Surface Management",short:"Descubrimiento de activos expuestos a internet: dominios, IPs, APIs, servicios cloud olvidados.",cap:"core",domain:null,
+   detail:"Ve lo que un atacante ve desde afuera. Descubre shadow IT, dominios olvidados, APIs expuestas, buckets públicos. Parte clave de CTEM stage 2 (Discovery).",
+   related:["ctem","tavm","cspm"],lenses:null},
+  {id:"bas",name:"BAS",full:"Breach & Attack Simulation",short:"Validación automatizada de controles de seguridad simulando técnicas reales de ataque (MITRE ATT&CK).",cap:"core",domain:null,
+   detail:"¿Tus controles realmente funcionan? BAS simula ransomware, lateral movement, exfiltración y te dice qué pasó. Parte de CTEM stage 4 (Validation). Tools: Cymulate, SafeBreach, AttackIQ.",
+   related:["ctem","tavm"],lenses:null},
+
+  // Additional tools/concepts
+  {id:"rasp",name:"RASP",full:"Runtime Application Self-Protection",short:"Controles de seguridad dentro de la aplicación que detectan y bloquean ataques basados en ejecución de código.",cap:"2",domain:"2.1",
+   detail:"Se instrumenta dentro de la app. Puede detectar y bloquear SQLi, XSS en runtime porque ve el contexto de ejecución. Trade-off: impacto en performance.",
+   related:["runtime","waf","iast"],lenses:null},
+  {id:"iast",name:"IAST",full:"Interactive Application Security Testing",short:"Análisis runtime que detecta vulnerabilidades mientras la aplicación ejecuta requests reales.",cap:"1",domain:"1.1",
+   detail:"Combina lo mejor de SAST y DAST: instrumenta la app y analiza durante ejecución. Menos falsos positivos que SAST porque tiene contexto de runtime. Pero requiere tráfico real.",
+   related:["sast","rasp","runtime"],lenses:null},
+  {id:"waf",name:"WAF",full:"Web Application Firewall",short:"Control de seguridad que filtra y bloquea tráfico HTTP/API malicioso antes de que llegue a la aplicación.",cap:"2",domain:"2.1",
+   detail:"Primer línea de defensa perimetral para apps web. Bloquea SQLi, XSS, bots, DDoS de capa 7. No reemplaza secure coding — es defensa en profundidad.",
+   related:["runtime","rasp","cwpp"],lenses:null},
+
+  // Risk Lenses as terms
+  {id:"lens_reach",name:"Reachability (Risk Lens)",short:"¿El activo o vulnerabilidad está expuesto a atacantes externos o es alcanzable por movimiento lateral?",cap:"lens",domain:null,
+   detail:"Primer filtro de priorización. Si una vulnerabilidad Critical no es alcanzable desde internet ni por lateral movement, su riesgo real baja significativamente. Contexto > CVSS score.",
+   related:["lens_priv","lens_data","tavm","ctem"],lenses:null},
+  {id:"lens_priv",name:"Privilege (Risk Lens)",short:"¿La explotación lleva a acceso elevado, identidades privilegiadas o paths de escalamiento?",cap:"lens",domain:null,
+   detail:"Segundo filtro. Un medio que da admin es peor que un critical que da read-only. Evalúa: ¿qué privilegios obtiene el atacante? ¿Puede moverse lateralmente? ¿Puede escalar a domain admin?",
+   related:["lens_reach","lens_data","ciem","tavm"],lenses:null},
+  {id:"lens_data",name:"Data Sensitivity (Risk Lens)",short:"¿La explotación expone PII/PHI/PCI, secretos o datos regulados?",cap:"lens",domain:null,
+   detail:"Tercer filtro. Un vulnerabilidad en un servidor de pruebas sin datos ≠ la misma vulnerabilidad en el servidor con 10M registros de clientes. El dato define el impacto real.",
+   related:["lens_reach","lens_priv","dspm","tavm"],lenses:null},
+];
+
+const DOMAINS = [
+  {id:"1.1",name:"Application Security",cap:"1",capName:"Secure Engineering & SDLC",
+   tools:"ASPM / SAST / SCA / SBOM / IaC",
+   itsec:"Identifica riesgos de código, dependencias e IaC antes de producción usando escaneos, reviews y pentests.",
+   bau_tavm:"Trackea vulnerabilidades en código, imágenes e IaC y rutea findings a los equipos responsables.",
+   terms:["appsec","aspm","sast","sca","sbom","iac","iast"]},
+  {id:"1.2",name:"DevSecOps & Shift-Left",cap:"1",capName:"Secure Engineering & SDLC",
+   tools:"CI/CD Security Gates",
+   itsec:"Asegura que controles de seguridad están embebidos en pipelines CI/CD antes de que las apps lleguen a producción.",
+   bau_tavm:"Alimenta issues recurrentes de vuelta a los pipelines para prevenir la re-introducción de riesgos conocidos.",
+   terms:["devsecops","shiftleft"]},
+  {id:"1.3",name:"SDLC Security & Quality",cap:"1",capName:"Secure Engineering & SDLC",
+   tools:"Threat Modeling / Design Review",
+   itsec:"Evalúa diseño seguro, calidad de código y controles SDLC para reducir deuda de seguridad futura.",
+   bau_tavm:"Usa tendencias de runtime y defectos para impulsar la reducción a largo plazo de deuda de seguridad.",
+   terms:["sdlc","threatmodel"]},
+  {id:"2.1",name:"Cloud Workload Protection",cap:"2",capName:"Runtime Protection & TAVM",
+   tools:"CWPP / CDR / RASP / WAF",
+   itsec:"Evalúa protecciones runtime baseline contra malware, misuse y técnicas comunes de ataque.",
+   bau_tavm:"Detecta y escala amenazas runtime en tiempo real.",
+   terms:["cwpp","cdr","runtime","rasp","waf"]},
+  {id:"2.2",name:"Threat & Vulnerability Mgmt",cap:"2",capName:"Runtime Protection & TAVM",
+   tools:"TAVM Core / Scanners / Risk Registers",
+   itsec:"Establece baseline de vulnerabilidades y decisiones de aceptación de riesgo.",
+   bau_tavm:"Prioriza, trackea y escala basado en riesgo, exposición e impacto de negocio.",
+   terms:["tavm"]},
+  {id:"2.3",name:"Threat Detection & SIEM",cap:"2",capName:"Runtime Protection & TAVM",
+   tools:"Cloud SIEM / Detection Rules",
+   itsec:"Confirma requerimientos de logging y detección.",
+   bau_tavm:"Correlaciona señales y escala incidentes usando workflows automatizados.",
+   terms:["threatdetect","siem","cloudsiem"]},
+  {id:"2.4",name:"Application Observability",cap:"2",capName:"Runtime Protection & TAVM",
+   tools:"APM / Tracing / DEM / RUM",
+   itsec:"Valida readiness de observabilidad para investigaciones de seguridad.",
+   bau_tavm:"Correlaciona vulnerabilidades con comportamiento real de aplicaciones.",
+   terms:["appobs","apm","tracing","dem","rum"]},
+  {id:"2.5",name:"AIOps & Automation",cap:"2",capName:"Runtime Protection & TAVM",
+   tools:"AIOps / SOAR / Automation",
+   itsec:"Evalúa readiness de automatización para alertas y remediación.",
+   bau_tavm:"Automatiza triage, creación de tickets y remediación a escala.",
+   terms:["aiops","soar"]},
+  {id:"3.1",name:"Cloud Security Posture",cap:"3",capName:"Cloud & Platform Security",
+   tools:"CSPM / KSPM",
+   itsec:"Valida postura cloud y Kubernetes antes de go-live.",
+   bau_tavm:"Monitorea continuamente misconfigurations y drift de postura.",
+   terms:["cspm","kspm"]},
+  {id:"3.2",name:"Identity & Data Security",cap:"3",capName:"Cloud & Platform Security",
+   tools:"CIEM / DSPM",
+   itsec:"Revisa permisos y riesgos de exposición de datos.",
+   bau_tavm:"Detecta permisos excesivos y exposición de datos sensibles.",
+   terms:["ciem","dspm"]},
+  {id:"3.3",name:"Container & Kubernetes Security",cap:"3",capName:"Cloud & Platform Security",
+   tools:"Container Scanning / K8s Policies",
+   itsec:"Verifica imágenes de containers y configuraciones de clusters.",
+   bau_tavm:"Identifica continuamente riesgos a través de ambientes.",
+   terms:["containersec","k8ssec"]},
+  {id:"3.4",name:"Compliance & Governance",cap:"3",capName:"Cloud & Platform Security",
+   tools:"GRC / Compliance Platforms",
+   itsec:"Verifica requerimientos regulatorios antes de producción.",
+   bau_tavm:"Provee evidencia continua y escala a GRC.",
+   terms:["compliance","governance"]},
+  {id:"4.1",name:"AI Security",cap:"4",capName:"Business, Risk & Emerging Security",
+   tools:"AI-SPM / AI-BOM / LLM Security",
+   itsec:"Asegura que componentes AI estén inventariados y evaluados antes de producción.",
+   bau_tavm:"Monitorea misconfigurations y riesgos emergentes de AI.",
+   terms:["aisec","aispm","aibom","llm","llmsec","aispm_agentic","rag"]},
+  {id:"4.2",name:"AI Observability",cap:"4",capName:"Business, Risk & Emerging Security",
+   tools:"LLM / GenAI Monitoring",
+   itsec:"Confirma monitoreo de GenAI para misuse y failures.",
+   bau_tavm:"Detecta patrones de uso anormales indicando abuso o leakage.",
+   terms:["aiobs","genai"]},
+  {id:"4.3",name:"FinOps & Cost Visibility",cap:"4",capName:"Business, Risk & Emerging Security",
+   tools:"FinOps / Cost Management",
+   itsec:"Revisa visibilidad de costos para detectar abuso o misconfigurations.",
+   bau_tavm:"Detecta anomalías de costos que señalan compromiso.",
+   terms:["finops","costvis","costanomaly"]},
+];
+
+const DEEP_TOPICS = [
+  {id:"dd-ctem",name:"CTEM Framework",group:"Frameworks",content:`
+    <h2>CTEM — Continuous Threat Exposure Management</h2>
+    <p class="dd-subtitle">Framework de Gartner (2022) · 5 etapas · Programa, no producto</p>
+    <div class="dd-block">
+      <h3>¿Qué es y por qué importa?</h3>
+      <p>CTEM es la evolución del vulnerability management tradicional. VM tradicional se enfoca en CVEs con escaneos periódicos. CTEM es más amplio: cubre <strong>cualquier exposición</strong> que ponga en riesgo datos, identidad o infraestructura, operando como un ciclo continuo alineado a prioridades de negocio.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Las 5 Etapas</h3>
+      <p><strong>1. Scoping</strong> — Define activos críticos y boundaries de exposición por BU o tipo de infra. No todo se puede proteger igual; empiezas por lo que importa al negocio.</p>
+      <p><strong>2. Discovery</strong> — Identifica TODAS las exposiciones, no solo CVEs: misconfigurations, credential leaks, dominios lookalike, shadow IT. Herramientas: EASM, CSPM, ASPM.</p>
+      <p><strong>3. Prioritization</strong> — Rankea por contexto de negocio, análisis de attack path y explotabilidad real. Aquí entran las 3 Risk Lenses (Reachability, Privilege, Data Sensitivity) y CRQ.</p>
+      <p><strong>4. Validation</strong> — Prueba si las exposiciones son realmente explotables y si los controles realmente funcionan. Herramientas: BAS, pentesting, red teaming.</p>
+      <p><strong>5. Mobilization</strong> — Impulsa remediación cross-functional con ownership y accountability claros. Sin esto, tienes dashboards bonitos pero no reduces riesgo.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Datos Clave</h3>
+      <p><span class="dd-key-stat">3x menos breaches</span> para orgs alineadas a CTEM (predicción Gartner 2026)</p>
+      <p><span class="dd-key-stat">Solo 16%</span> de orgs han logrado implementación operativa</p>
+      <p><span class="dd-key-stat">48h</span> 61% de vulns explotadas en 2025 fueron weaponizadas en menos de 48 horas</p>
+      <p><span class="dd-key-stat">45 herramientas</span> promedio por organización, pero luchan para correlacionar findings</p>
+    </div>
+    <div class="dd-block">
+      <h3>Herramientas por Etapa CTEM</h3>
+      <p><strong>Discovery:</strong> EASM (superficie externa), CSPM/KSPM (cloud), ASPM (apps), DSPM (datos)</p>
+      <p><strong>Prioritization:</strong> CRQ platforms, exposure assessment platforms (Gartner MQ inaugural 2025)</p>
+      <p><strong>Validation:</strong> BAS (Cymulate, SafeBreach, AttackIQ), pentesting, red team, Pentera</p>
+    </div>
+    <div class="dd-block">
+      <h3>Términos Relacionados</h3>
+      <div class="dd-terms-in-domain" id="dd-ctem-terms"></div>
+    </div>
+  `},
+  {id:"dd-crq",name:"CRQ & FAIR",group:"Frameworks",content:`
+    <h2>CRQ — Cyber Risk Quantification</h2>
+    <p class="dd-subtitle">De heat maps a modelos financieros · Modelo FAIR · Monte Carlo</p>
+    <div class="dd-block">
+      <h3>El Problema que Resuelve</h3>
+      <p>Los boards y C-suite ya no aceptan "riesgo alto" en rojo. Quieren saber: <strong>"¿cuánto dinero podríamos perder y con qué probabilidad?"</strong> CRQ traduce riesgo cyber al mismo lenguaje que riesgo de crédito, riesgo de mercado y seguros.</p>
+    </div>
+    <div class="dd-block">
+      <h3>El Modelo FAIR</h3>
+      <p><strong>Risk = LEF × LM</strong></p>
+      <p><strong>LEF (Loss Event Frequency)</strong> — Frecuencia probable de eventos de pérdida en un período específico.</p>
+      <p><strong>LM (Loss Magnitude)</strong> — Impacto financiero total:</p>
+      <ul>
+        <li>Pérdidas primarias: respuesta a incidentes, interrupción de negocio, costos de recuperación</li>
+        <li>Pérdidas secundarias: multas regulatorias, litigación, daño de marca, pérdida de clientes</li>
+      </ul>
+      <p>Se usa <strong>simulación Monte Carlo</strong> para calcular rangos de pérdida probable, no un solo número.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Métricas Clave</h3>
+      <p><strong>ALE</strong> (Annualized Loss Expectancy) — Pérdida esperada anualizada</p>
+      <p><strong>PML</strong> (Probable Maximum Loss) — Peor escenario probable</p>
+      <p><strong>VaR / TVaR</strong> — Value-at-Risk / Tail-Value-at-Risk (prestados de finanzas)</p>
+      <p><strong>Time-to-Loss</strong> — Qué tan rápido se materializa el daño</p>
+    </div>
+    <div class="dd-block">
+      <h3>CRQ + CTEM = La Combinación Ganadora</h3>
+      <p>En vez de priorizar por CVSS score (técnico), priorizas por impacto financiero modelado. Un CVSS 7.5 que afecta tu sistema de pagos vale más atención que un CVSS 9.8 en un servidor de pruebas sin datos.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Datos de Mercado</h3>
+      <p><span class="dd-key-stat">$900M para 2033</span> mercado CRQ (desde $340M en 2024, 12% CAGR)</p>
+      <p><span class="dd-key-stat">Boards exigen $$$</span> Los heat maps están siendo rechazados por auditoría y directivos</p>
+    </div>
+  `},
+  {id:"dd-aisec",name:"AI Security",group:"Emerging",content:`
+    <h2>AI Security Landscape (2025-2026)</h2>
+    <p class="dd-subtitle">AI-SPM · Agentic Security · Shadow AI · EU AI Act</p>
+    <div class="dd-block">
+      <h3>¿Por qué AI Security es Distinto?</h3>
+      <p>CSPM protege configuración cloud. DSPM protege datos. <strong>AI-SPM</strong> aborda riesgos específicos de AI que ninguno de los otros cubre: prompt injection, model extraction, data poisoning, adversarial attacks, behavioral drift.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Datos que Asustan</h3>
+      <p><span class="dd-key-stat">$5.72M</span> costo promedio de breach AI-powered</p>
+      <p><span class="dd-key-stat">$670K más</span> que breaches promedio cuando hay shadow AI involucrado</p>
+      <p><span class="dd-key-stat">Solo 6%</span> de orgs tienen AI security avanzado (vs $2.5T en gasto AI)</p>
+      <p><span class="dd-key-stat">94%</span> de orgs usando OpenAI tienen al menos una cuenta pública sin restricciones</p>
+    </div>
+    <div class="dd-block">
+      <h3>Agentic Security — Lo Más Nuevo</h3>
+      <p><strong>AG-SPM</strong>: Descubrimiento y gobernanza continua del lifecycle de agentes, desde código hasta runtime.</p>
+      <p><strong>AG-DR</strong>: Detección y respuesta con baselines agentic-aware para patrones anómalos.</p>
+      <p><strong>Shadow MCP</strong>: El nuevo shadow IT — servidores MCP no autorizados que bypasean canales formales.</p>
+      <p><span class="dd-key-stat">48.9% ciegos</span> al tráfico machine-to-machine</p>
+    </div>
+    <div class="dd-block">
+      <h3>Amenazas Principales (OWASP LLM Top 10)</h3>
+      <ul>
+        <li><strong>Prompt Injection</strong> — #1 más explotada. Directa (el usuario ataca) e indirecta (via RAG/documentos)</li>
+        <li><strong>Data Poisoning</strong> — Contaminar datos de entrenamiento para alterar comportamiento del modelo</li>
+        <li><strong>Model Extraction</strong> — Robar el modelo via queries repetidas</li>
+        <li><strong>Insecure Output Handling</strong> — El output del LLM se ejecuta sin sanitizar</li>
+      </ul>
+    </div>
+    <div class="dd-block">
+      <h3>Regulatory Timeline</h3>
+      <p><span class="dd-key-stat">Aug 2, 2026</span> EU AI Act high-risk enforcement deadline</p>
+      <p>Standards relevantes: NIST AI RMF, OWASP LLM Top 10, MITRE ATLAS, ISO/IEC 42001</p>
+    </div>
+  `},
+  {id:"dd-lenses",name:"Risk Lenses",group:"Framework",content:`
+    <h2>Las 3 Risk Lenses</h2>
+    <p class="dd-subtitle">Se aplican a CADA dominio · Priorización basada en contexto real</p>
+    <div class="dd-block">
+      <h3>¿Por qué no basta con CVSS?</h3>
+      <p>CVSS te dice la severidad técnica de una vulnerabilidad en el vacío. Las Risk Lenses te dicen la severidad <strong>en tu contexto específico</strong>. Un CVSS 9.8 interno sin datos sensibles puede ser menos urgente que un CVSS 7.0 expuesto a internet con acceso a PII de millones de clientes.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Lens 1: Reachability</h3>
+      <p><strong>Pregunta:</strong> ¿Un atacante puede llegar a esto?</p>
+      <p>Evalúa: exposición a internet, accesibilidad por lateral movement, network segmentation. Si no es alcanzable, el riesgo real baja drásticamente sin importar el CVSS.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Lens 2: Privilege</h3>
+      <p><strong>Pregunta:</strong> ¿Qué obtiene el atacante si lo explota?</p>
+      <p>Evalúa: nivel de acceso post-explotación, posibilidad de escalamiento, movimiento lateral, acceso a credenciales. Un medium que da domain admin > un critical que da read-only.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Lens 3: Data Sensitivity</h3>
+      <p><strong>Pregunta:</strong> ¿Qué datos están en juego?</p>
+      <p>Evalúa: presencia de PII/PHI/PCI, secretos, datos regulados. Define el impacto real del breach y las consecuencias regulatorias y legales.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Aplicación Práctica</h3>
+      <p>Cada finding de TAVM debería pasar por las 3 lenses para determinar la prioridad real. Esto transforma una lista de 10,000 vulnerabilidades en una lista de 200 que realmente importan.</p>
+    </div>
+  `},
+  {id:"dd-modes",name:"ITSec vs bau_tavm",group:"Framework",content:`
+    <h2>Initial Assessment (ITSec) vs bau_tavm</h2>
+    <p class="dd-subtitle">Pre-producción vs Operación continua · Dos modos de cada dominio</p>
+    <div class="dd-block">
+      <h3>Dos Caras de la Misma Moneda</h3>
+      <p>Cada uno de los 15 dominios opera en dos modos. No son programas separados — son fases del mismo ciclo de vida de seguridad.</p>
+    </div>
+    <div class="dd-comparison">
+      <div class="dd-comp-box">
+        <h4 style="color:var(--accent1)">Initial Assessment (ITSec)</h4>
+        <p>Validación pre-producción. ¿Los controles de seguridad existen antes de go-live? Gate de entrada. Snapshot puntual. Objetivo: no deployar inseguro.</p>
+      </div>
+      <div class="dd-comp-box">
+        <h4 style="color:var(--accent2)">bau_tavm</h4>
+        <p>Gestión operativa continua. Monitoreo, priorización y remediación en producción. Ciclo continuo. Objetivo: reducir riesgo operativo de forma sostenida.</p>
+      </div>
+    </div>
+    <div class="dd-block" style="margin-top:20px">
+      <h3>Ejemplo: Domain 1.1 (Application Security)</h3>
+      <p><strong>ITSec:</strong> "Antes de ir a producción, ¿corrimos SAST, SCA, revisamos el SBOM y escaneamos el IaC? ¿Hay hallazgos críticos sin resolver?"</p>
+      <p><strong>bau_tavm:</strong> "En producción, ¿estamos trackeando nuevas vulnerabilidades en las dependencias? ¿Los findings se rutean automáticamente al equipo dueño?"</p>
+    </div>
+    <div class="dd-block">
+      <h3>El Puente entre Ambos</h3>
+      <p>Lo que encuentras en ITSec alimenta tu baseline de bau_tavm. Lo que descubres en bau_tavm mejora tus checks de ITSec. Son un feedback loop, no silos.</p>
+    </div>
+  `},
+  {id:"dd-tools",name:"Panorama de Tools",group:"Reference",content:`
+    <h2>Tool Landscape — Quick Reference</h2>
+    <p class="dd-subtitle">CNAPP · Observability · CRQ · Cuándo usar qué</p>
+    <div class="dd-block">
+      <h3>CNAPP / Cloud Security</h3>
+      <p><strong>Wiz</strong> — Agentless, deployment rápido, graph-based attack paths. Premium pricing, menos profundidad runtime.</p>
+      <p><strong>Prisma Cloud</strong> — CNAPP comprehensivo, code-to-cloud. Deployment complejo, curva de aprendizaje empinada.</p>
+      <p><strong>Orca</strong> — Agentless, deep scanning, AI-SPM. Market share menor que Wiz.</p>
+      <p><strong>Defender for Cloud</strong> — Integración nativa Azure, cost-effective. Multi-cloud débil, CIEM limitado.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Observability & Security</h3>
+      <p><strong>Datadog</strong> — Plataforma unificada, fuerte APM + security. Costoso a escala, pricing por volumen de datos.</p>
+      <p><strong>Dynatrace</strong> — AI-powered (Davis), fuerte APM. Features de seguridad madurando, licensing complejo.</p>
+      <p><strong>Splunk</strong> — SIEM potente, ecosistema maduro. Caro, resource-intensive.</p>
+    </div>
+    <div class="dd-block">
+      <h3>CRQ Platforms</h3>
+      <p><strong>SAFE Security</strong> — FAIR-based, agentic AI, 100+ integraciones. Plataforma más nueva, ecosistema creciendo.</p>
+      <p><strong>Kovrr</strong> — Insurance-grade modeling, industry benchmarks. Más enfocado en use cases de seguros.</p>
+      <p><strong>Bitsight</strong> — External risk ratings, third-party risk. Menos profundidad CRQ interna.</p>
+    </div>
+    <div class="dd-block">
+      <h3>Principio de Selección</h3>
+      <p>No existe la herramienta perfecta. La decisión depende de: stack cloud (Azure-heavy → Defender), madurez del programa (early → Wiz por speed), presupuesto, y qué integrations necesitas. Siempre evalúa trade-offs.</p>
+    </div>
+  `},
+  {id:"dd-priorities",name:"Prioridades 2026",group:"Reference",content:`
+    <h2>Prioridades Estratégicas para TAVM Leaders (2026)</h2>
+    <p class="dd-subtitle">8 prioridades accionables para líderes de programa</p>
+    <div class="dd-block">
+      <p><strong>1. Evolucionar de VM a CTEM</strong> — Ir más allá del CVE scanning hacia gestión continua de exposiciones alineada a prioridades de negocio.</p>
+      <p><strong>2. Embeber CRQ en operaciones</strong> — Reemplazar heat maps con modelos de riesgo financiero para comunicación a nivel board.</p>
+      <p><strong>3. Abordar AI security proactivamente</strong> — Establecer capacidades AI-SPM antes del enforcement del EU AI Act (agosto 2026).</p>
+      <p><strong>4. Integrar las 3 Risk Lenses</strong> — Aplicar sistemáticamente Reachability, Privilege y Data Sensitivity a cada hallazgo.</p>
+      <p><strong>5. Automatizar agresivamente</strong> — Usar AIOps para reducir ruido, auto-triage, y enforced remediación basada en SLAs.</p>
+      <p><strong>6. Puente ITSec ↔ bau_tavm</strong> — Asegurar que la validación pre-producción alimente al TAVM operativo.</p>
+      <p><strong>7. Cuantificar ROI</strong> — Usar CRQ para demostrar que inversiones en seguridad entregan reducción medible de riesgo.</p>
+      <p><strong>8. Prepararse para agentic security</strong> — Construir frameworks de gobernanza para AI agents y MCP servers antes de que proliferen.</p>
+    </div>
+  `},
+];
+
+// ===== RENDERING =====
+const capColors = {"1":"cap1","2":"cap2","3":"cap3","4":"cap4","core":"core","lens":"lens"};
+const capNames = {"1":"Secure Engineering","2":"Runtime & TAVM","3":"Cloud & Platform","4":"Business & Emerging","core":"Framework","lens":"Risk Lens"};
+
+function renderGlossary(filter,search) {
+  const grid = document.getElementById('glossaryGrid');
+  let terms = TERMS;
+  if (filter && filter !== 'all') terms = terms.filter(tm => tm.cap === filter);
+  if (search) {
+    const s = search.toLowerCase();
+    terms = terms.filter(tm => {
+      const enT = TERMS_EN[tm.id] || {};
+      return tm.name.toLowerCase().includes(s) || (tm.full||'').toLowerCase().includes(s) || tm.short.toLowerCase().includes(s) || tm.id.toLowerCase().includes(s)
+        || (enT.short||'').toLowerCase().includes(s);
+    });
+  }
+  grid.innerHTML = terms.map(tm => {
+    const shortText = getTermText(tm, 'short');
+    const detailText = getTermText(tm, 'detail');
+    const lensesData = getTermText(tm, 'lenses');
+    return `
+    <div class="term-card" id="card-${tm.id}" onclick="toggleCard('${tm.id}')">
+      <div class="term-header">
+        <span class="term-name">${tm.name}${tm.full ? ` <span style="font-weight:400;font-size:12px;color:var(--text-muted)">(${tm.full})</span>` : ''}</span>
+        <span class="term-badge ${capColors[tm.cap]}">${capNames[tm.cap]}${tm.domain ? ' · '+tm.domain : ''}</span>
+      </div>
+      <div class="term-short">${shortText}</div>
+      <div class="term-detail">
+        ${detailText ? `<div class="detail-section"><div class="detail-label">${t('deepDiveLabel')}</div><div class="detail-text">${detailText}</div></div>` : ''}
+        ${lensesData ? `<div class="detail-section"><div class="detail-label">${t('riskLensesApplied')}</div>
+          <div class="lens-indicators">
+            <div class="lens-ind"><span class="lens-dot" style="background:var(--lens-reach)"></span><span style="font-size:11px;color:var(--text-muted)">R</span></div>
+            <div class="lens-ind"><span class="lens-dot" style="background:var(--lens-priv)"></span><span style="font-size:11px;color:var(--text-muted)">P</span></div>
+            <div class="lens-ind"><span class="lens-dot" style="background:var(--lens-data)"></span><span style="font-size:11px;color:var(--text-muted)">D</span></div>
+          </div>
+          <div class="detail-text" style="margin-top:6px">
+            ${lensesData.reach ? `<div style="margin-bottom:4px"><strong style="color:var(--lens-reach)">R:</strong> ${lensesData.reach}</div>` : ''}
+            ${lensesData.priv ? `<div style="margin-bottom:4px"><strong style="color:var(--lens-priv)">P:</strong> ${lensesData.priv}</div>` : ''}
+            ${lensesData.data ? `<div><strong style="color:var(--lens-data)">D:</strong> ${lensesData.data}</div>` : ''}
+          </div>
+        </div>` : ''}
+        ${tm.related ? `<div class="detail-section"><div class="detail-label">${t('related')}</div><div class="related-tags">${tm.related.map(r => {
+          const rt = TERMS.find(x=>x.id===r);
+          return rt ? `<span class="related-tag" onclick="event.stopPropagation();jumpToTerm('${r}')">${rt.name}</span>` : '';
+        }).join('')}</div></div>` : ''}
+      </div>
+    </div>
+  `}).join('');
+}
+
+function toggleCard(id) {
+  const card = document.getElementById('card-'+id);
+  card.classList.toggle('expanded');
+}
+
+function jumpToTerm(id) {
+  // Reset filter
+  filterGlossary('all', document.querySelector('.filter-chip[data-cap="all"]'));
+  showSection('glossary');
+  setTimeout(() => {
+    const card = document.getElementById('card-'+id);
+    if (card) {
+      card.scrollIntoView({behavior:'smooth',block:'center'});
+      card.classList.add('expanded');
+      card.style.boxShadow = '0 0 0 2px var(--accent1)';
+      setTimeout(() => card.style.boxShadow = '', 2000);
+    }
+  }, 100);
+}
+
+function filterGlossary(cap, btn) {
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGlossary(cap, document.getElementById('searchInput').value);
+}
+
+function handleSearch(val) {
+  const activeFilter = document.querySelector('.filter-chip.active');
+  const cap = activeFilter ? activeFilter.dataset.cap : 'all';
+  renderGlossary(cap, val);
+}
+
+// ===== MIND MAP =====
+function renderMindmap() {
+  const container = document.getElementById('mindmapContent');
+  const caps = [
+    {id:"1",name:"Capability 1: Secure Engineering & SDLC",color:"var(--cap1)"},
+    {id:"2",name:"Capability 2: Runtime Protection & TAVM",color:"var(--cap2)"},
+    {id:"3",name:"Capability 3: Cloud & Platform Security",color:"var(--cap3)"},
+    {id:"4",name:"Capability 4: Business, Risk & Emerging Security",color:"var(--cap4)"},
+  ];
+
+  container.innerHTML = caps.map(cap => {
+    const domains = DOMAINS.filter(d => d.cap === cap.id);
+    return `
+      <div class="capability-section" style="border-left:3px solid ${cap.color}">
+        <div class="cap-title"><span class="cap-dot" style="background:${cap.color}"></span>${cap.name}</div>
+        <div class="domains-flow">
+          ${domains.map(d => {
+            const itsecText = getDomainText(d, 'itsec');
+            const bauText = getDomainText(d, 'bau_tavm');
+            return `
+            <div class="domain-node" onclick="showDomainDeepDive('${d.id}')">
+              <div class="domain-name" style="color:${cap.color}">${d.id} ${d.name}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">${d.tools}</div>
+              <div class="domain-terms">
+                ${d.terms.map(tid => {
+                  const tm = TERMS.find(x=>x.id===tid);
+                  return tm ? `<span class="domain-term-chip" onclick="event.stopPropagation();jumpToTerm('${tid}')">${tm.name}</span>` : '';
+                }).join('')}
+              </div>
+              <div class="domain-modes">
+                <span class="mode-pill" title="${itsecText}">ITSec</span>
+                <span class="mode-pill" title="${bauText}">bau_tavm</span>
+              </div>
+            </div>
+          `}).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Add cross-cutting section
+  const crossTerms = TERMS.filter(tm => tm.cap === 'core');
+  container.innerHTML += `
+    <div class="capability-section" style="border-left:3px solid #888">
+      <div class="cap-title"><span class="cap-dot" style="background:#888"></span>${t('crossCutting')}</div>
+      <div class="domains-flow">
+        ${crossTerms.map(tm => `
+          <div class="domain-node" onclick="jumpToTerm('${tm.id}')">
+            <div class="domain-name" style="color:#aaa">${tm.name}</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:4px">${getTermText(tm, 'short')}</div>
+            ${tm.related ? `<div class="domain-terms" style="margin-top:8px">${tm.related.map(r => {
+              const rt = TERMS.find(x=>x.id===r);
+              return rt ? `<span class="domain-term-chip" onclick="event.stopPropagation();jumpToTerm('${r}')">${rt.name}</span>` : '';
+            }).join('')}</div>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function showDomainDeepDive(domainId) {
+  showSection('deepdive');
+  const d = DOMAINS.find(x => x.id === domainId);
+  if (!d) return;
+  const content = document.getElementById('ddContent');
+  const cap = {1:'var(--cap1)',2:'var(--cap2)',3:'var(--cap3)',4:'var(--cap4)'}[d.cap];
+  const itsecText = getDomainText(d, 'itsec');
+  const bauText = getDomainText(d, 'bau_tavm');
+  content.innerHTML = `
+    <h2 style="color:${cap}">${d.id} ${d.name}</h2>
+    <p class="dd-subtitle">${d.capName} · ${d.tools}</p>
+    <div class="dd-comparison" style="margin-bottom:20px">
+      <div class="dd-comp-box">
+        <h4 style="color:var(--accent1)">Initial Assessment (ITSec)</h4>
+        <p>${itsecText}</p>
+      </div>
+      <div class="dd-comp-box">
+        <h4 style="color:var(--accent2)">bau_tavm</h4>
+        <p>${bauText}</p>
+      </div>
+    </div>
+    <div class="dd-block">
+      <h3>${t('termsInDomain')}</h3>
+      <div class="dd-terms-in-domain">
+        ${d.terms.map(tid => {
+          const tm = TERMS.find(x=>x.id===tid);
+          return tm ? `<span class="dd-term-pill" onclick="jumpToTerm('${tid}')">${tm.name}</span>` : '';
+        }).join('')}
+      </div>
+    </div>
+    ${d.terms.map(tid => {
+      const tm = TERMS.find(x=>x.id===tid);
+      if (!tm || !tm.detail) return '';
+      const detailText = getTermText(tm, 'detail');
+      const lensesData = getTermText(tm, 'lenses');
+      return `<div class="dd-block">
+        <h3>${tm.name}${tm.full ? ` (${tm.full})` : ''}</h3>
+        <p>${detailText}</p>
+        ${lensesData ? `<div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px">
+          ${lensesData.reach ? `<div style="margin-bottom:3px"><strong style="color:var(--lens-reach)">Reachability:</strong> <span style="color:var(--text-dim)">${lensesData.reach}</span></div>` : ''}
+          ${lensesData.priv ? `<div style="margin-bottom:3px"><strong style="color:var(--lens-priv)">Privilege:</strong> <span style="color:var(--text-dim)">${lensesData.priv}</span></div>` : ''}
+          ${lensesData.data ? `<div><strong style="color:var(--lens-data)">Data Sensitivity:</strong> <span style="color:var(--text-dim)">${lensesData.data}</span></div>` : ''}
+        </div>` : ''}
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// ===== DEEP DIVE =====
+function renderDeepDive() {
+  const sidebar = document.getElementById('ddSidebar');
+  const groups = {};
+  DEEP_TOPICS.forEach(tp => {
+    const groupName = (currentLang === 'en' && DEEP_TOPICS_EN[tp.id]) ? DEEP_TOPICS_EN[tp.id].group : tp.group;
+    if (!groups[groupName]) groups[groupName] = [];
+    groups[groupName].push(tp);
+  });
+
+  // Add domain navigation
+  let html = `<div class="dd-sidebar-title">${t('strategicTopics')}</div>`;
+  Object.entries(groups).forEach(([group, topics]) => {
+    html += `<div class="dd-nav-group"><div class="dd-nav-group-label">${group}</div>`;
+    topics.forEach(tp => {
+      const topicName = (currentLang === 'en' && DEEP_TOPICS_EN[tp.id]) ? DEEP_TOPICS_EN[tp.id].name : tp.name;
+      html += `<div class="dd-nav-item" data-topic="${tp.id}" onclick="showDeepTopic('${tp.id}')">${topicName}</div>`;
+    });
+    html += '</div>';
+  });
+
+  html += `<div class="dd-sidebar-title" style="margin-top:20px">${t('byDomain')}</div>`;
+  const caps = [{id:"1",label:"Secure Eng"},{id:"2",label:"Runtime"},{id:"3",label:"Cloud"},{id:"4",label:"Business"}];
+  caps.forEach(cap => {
+    const domains = DOMAINS.filter(d => d.cap === cap.id);
+    html += `<div class="dd-nav-group"><div class="dd-nav-group-label">${cap.label}</div>`;
+    domains.forEach(d => {
+      html += `<div class="dd-nav-item" onclick="showDomainDeepDive('${d.id}')">${d.id} ${d.name}</div>`;
+    });
+    html += '</div>';
+  });
+
+  sidebar.innerHTML = html;
+}
+
+function showDeepTopic(id) {
+  document.querySelectorAll('.dd-nav-item').forEach(i => i.classList.remove('active'));
+  const navItem = document.querySelector(`[data-topic="${id}"]`);
+  if (navItem) navItem.classList.add('active');
+
+  const topic = DEEP_TOPICS.find(tp => tp.id === id);
+  if (!topic) return;
+  
+  // Use translated content if available
+  const topicContent = (currentLang === 'en' && DEEP_TOPICS_EN[id]) ? DEEP_TOPICS_EN[id].content : topic.content;
+  document.getElementById('ddContent').innerHTML = topicContent;
+
+  // Populate related terms if container exists
+  const termsContainer = document.getElementById('dd-ctem-terms');
+  if (termsContainer) {
+    const related = ['ctem','tavm','easm','bas','crq','cnapp','cspm','aspm'];
+    termsContainer.innerHTML = related.map(tid => {
+      const tm = TERMS.find(x=>x.id===tid);
+      return tm ? `<span class="dd-term-pill" onclick="jumpToTerm('${tid}')">${tm.name}</span>` : '';
+    }).join('');
+  }
+}
+
+// ===== NAVIGATION =====
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  
+  // Set the correct nav button active based on section id
+  const sectionMap = {glossary:0, mindmap:1, deepdive:2};
+  const btnIndex = sectionMap[id];
+  if (btnIndex !== undefined) {
+    document.querySelectorAll('.nav-btn')[btnIndex].classList.add('active');
+  }
+
+  if (id === 'mindmap') renderMindmap();
+  if (id === 'deepdive') renderDeepDive();
+}
+
+// Init
+renderGlossary('all','');
+</script>
+</body>
+</html>
